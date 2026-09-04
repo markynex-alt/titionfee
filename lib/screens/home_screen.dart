@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
-import '../providers/app_provider.dart';
 import 'package:intl/intl.dart';
 
+import 'package:tuition_fee/providers/app_provider.dart';
+import 'package:tuition_fee/utils/app_colors.dart';
+import 'package:tuition_fee/utils/formatters.dart';
+import 'package:tuition_fee/dialoges/month_due_dialog.dart';
+import 'package:tuition_fee/views/dialogs/paid_students_dialog.dart';
+import 'package:tuition_fee/views/home/widgets/grid_tile_card.dart';
+import 'package:tuition_fee/views/home/widgets/recent_fee_card.dart';
+import 'package:tuition_fee/views/home/widgets/sticky_header.dart';
+
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final Function(int)? onNavigate;
+
+  const HomeScreen({super.key, this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -16,8 +25,22 @@ class HomeScreen extends StatelessWidget {
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
 
-    final paid = payments.where((e) => e['status'] == 'paid').toList();
-    final assigned = payments.where((e) => e['status'] == 'assigned').toList();
+    final activeStudentIds = p.students
+        .map((s) => s.id?.toString())
+        .where((id) => id != null && id.isNotEmpty)
+        .toSet();
+
+    final paid = payments.where((e) {
+      final isPaid = e['status'] == 'paid';
+      final studentId = e['studentId']?.toString() ?? '';
+      return isPaid && activeStudentIds.contains(studentId);
+    }).toList();
+
+    final assigned = payments.where((e) {
+      final isAssigned = e['status'] == 'assigned';
+      final studentId = e['studentId']?.toString() ?? '';
+      return isAssigned && activeStudentIds.contains(studentId);
+    }).toList();
 
     double sum(List<Map<String, dynamic>> list) =>
         list.fold(0.0, (s, e) => s + (e['amount'] ?? 0));
@@ -29,253 +52,226 @@ class HomeScreen extends StatelessWidget {
     })
         .fold(0.0, (s, e) => s + (e['amount'] ?? 0));
 
-    final totalIncome = sum(paid);
     final totalDue = sum(assigned);
-    final monthIncome = currentMonthSum(paid);
-    final monthDue = currentMonthSum(assigned);
-    final formatter = NumberFormat("#,##,##0", "en_IN");
+    final totalIncome = sum(paid);
+
+    final previousMonthDate = DateTime(now.year, now.month - 1, 1);
+    final doublePreviousMonthDate = DateTime(now.year, now.month - 2, 1);
+
+    final previousMonthName = DateFormat('MMM').format(previousMonthDate);
+    final doublePreviousMonthName = DateFormat('MMM').format(doublePreviousMonthDate);
+
+    double getMonthDue(List<Map<String, dynamic>> list, DateTime date) => list
+        .where((e) {
+      final d = DateTime.parse(e['date']);
+      return d.month == date.month && d.year == date.year;
+    })
+        .fold(0.0, (s, e) => s + (e['amount'] ?? 0));
+
+    final prevMonthDueAmount = getMonthDue(assigned, previousMonthDate);
+    final doublePrevMonthDueAmount = getMonthDue(assigned, doublePreviousMonthDate);
+
+    final monthPaidAmount = currentMonthSum(paid);
+    final prevMonthPaidAmount = getMonthDue(paid, previousMonthDate);
+    final doublePrevMonthPaidAmount = getMonthDue(paid, doublePreviousMonthDate);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            /// ================= UNIFORM STAT CARDS =================
-            GridView.count(
-              crossAxisCount: 2,
-              childAspectRatio: 1.9,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              children: [
-                _statTile(
-                  title: 'Students',
-                  value: p.students.length.toString(),
-                  icon: Icons.school,
-                  color: Colors.blue,
-                ),
-                _statTile(
-                  title: 'Batches',
-                  value: p.batches.length.toString(),
-                  icon: Icons.groups,
-                  color: Colors.orange,
-                ),
-                _statTile(
-                  title: 'Total Income',
-                  value: '৳${formatter.format(totalIncome)}',
-                  icon: Icons.monetization_on,
-                  color: Colors.green,
-                ),
-
-                _statTile(
-                  title: 'Total Due',
-                  value: '৳${formatter.format(totalDue)}',
-                  icon: Icons.warning_amber,
-                  color: Colors.red,
-                ),
-                _statTile(
-                  title: 'This Month Income',
-                  value: '৳${formatter.format(monthIncome)}',
-                  icon: Icons.trending_up,
-                  color: Colors.teal,
-                ),
-                _statTile(
-                  title: 'This Month Due',
-                  value: '৳${formatter.format(monthDue)}',
-                  icon: Icons.schedule,
-                  color: Colors.deepOrange,
-                ),
-                _statTile(
-                  title: 'Overall Paid',
-                  value: '৳${formatter.format(totalIncome)}',
-                  icon: Icons.check_circle,
-                  color: Colors.indigo,
-                ),
-                _statTile(
-                  title: 'Overall Assigned',
-                  value: '৳${totalDue.toStringAsFixed(0)}',
-                  icon: Icons.assignment,
-                  color: Colors.brown,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            /// ================= PIE CHART =================
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Payment Distribution',
-                      style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 220,
-                      child: PieChart(
-                        PieChartData(
-                          centerSpaceRadius: 50,
-                          sections: [
-                            PieChartSectionData(
-                              value: paid.length.toDouble(),
-                              title: 'Paid',
-                              color: Colors.green,
-                              radius: 60,
-                            ),
-                            PieChartSectionData(
-                              value: assigned.length.toDouble(),
-                              title: 'Due',
-                              color: Colors.red,
-                              radius: 60,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            /// ================= RECENT PAID =================
-            _tableCard(
-              title: 'Recent Paid Fees',
-              headers: const ['Student', 'Amount', 'Month'],
-              rows: paid.take(5).map((e) {
-                final d = DateTime.parse(e['date']);
-                return [
-                  e['studentId'].toString(),
-                  '৳${e['amount']}',
-                  '${d.month}/${d.year}',
-                ];
-              }).toList(),
-            ),
-
-            const SizedBox(height: 24),
-
-            /// ================= RECENT DUE =================
-            _tableCard(
-              title: 'Recent Due Fees',
-              headers: const ['Student', 'Amount', 'Month'],
-              rows: assigned.take(5).map((e) {
-                final d = DateTime.parse(e['date']);
-                return [
-                  e['studentId'].toString(),
-                  '৳${e['amount']}',
-                  '${d.month}/${d.year}',
-                ];
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// ================= UNIFORM STAT TILE =================
-  Widget _statTile({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 6),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 6,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(14),
-              ),
-            ),
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        slivers: [
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: HomeStickyHeader(minHeight: 128, maxHeight: 148),
           ),
-          Expanded(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, size: 22, color: color),
-                  const SizedBox(height: 6),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                  GridView.count(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.85,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      GridTileCard(
+                        title: 'Students',
+                        subtitle: '${p.students.length} registered',
+                        icon: Icons.school,
+                        iconBgColor: AppColors.primaryIconBg,
+                        cardBgColor: AppColors.primaryTileBg,
+                        onTap: () => onNavigate?.call(2),
+                      ),
+                      GridTileCard(
+                        title: 'Batches',
+                        subtitle: '${p.batches.length} active',
+                        icon: Icons.groups,
+                        iconBgColor: const Color(0xFFFF9800),
+                        cardBgColor: const Color(0xFFFFF3E0),
+                        onTap: () => onNavigate?.call(1),
+                      ),
+                      GridTileCard(
+                        title: '$previousMonthName Due',
+                        subtitle: Formatters.formatCurrency(prevMonthDueAmount),
+                        icon: Icons.history,
+                        iconBgColor: const Color(0xFFFF5722),
+                        cardBgColor: const Color(0xFFFBE9E7),
+                        onTap: () => showMonthDueStudentsDialog(
+                          context,
+                          monthName: previousMonthName,
+                          targetDate: previousMonthDate,
+                          assignedPayments: assigned,
+                          students: p.students,
+                        ),
+                      ),
+                      GridTileCard(
+                        title: '$doublePreviousMonthName Due',
+                        subtitle: Formatters.formatCurrency(doublePrevMonthDueAmount),
+                        icon: Icons.history_toggle_off_rounded,
+                        iconBgColor: AppColors.warningIconBg,
+                        cardBgColor: AppColors.warningTileBg,
+                        onTap: () => showMonthDueStudentsDialog(
+                          context,
+                          monthName: doublePreviousMonthName,
+                          targetDate: doublePreviousMonthDate,
+                          assignedPayments: assigned,
+                          students: p.students,
+                        ),
+                      ),
+                      GridTileCard(
+                        title: 'Total Due',
+                        subtitle: Formatters.formatCurrency(totalDue),
+                        icon: Icons.warning_amber_rounded,
+                        iconBgColor: AppColors.warningIconBg,
+                        cardBgColor: AppColors.warningTileBg,
+                        onTap: () => showMonthDueStudentsDialog(
+                          context,
+                          monthName: 'Total',
+                          targetDate: now,
+                          assignedPayments: assigned,
+                          students: p.students,
+                        ),
+                      ),
+                      GridTileCard(
+                        title: 'This Month Paid',
+                        subtitle: Formatters.formatCurrency(monthPaidAmount),
+                        icon: Icons.trending_up,
+                        iconBgColor: const Color(0xFF00BCD4),
+                        cardBgColor: const Color(0xE1E0F7FA),
+                        onTap: () => showPaidStudentsDialog(
+                          context,
+                          title: 'This Month',
+                          paidPayments: paid,
+                          dynamicStudents: p.students,
+                          filterDate: now,
+                        ),
+                      ),
+                      GridTileCard(
+                        title: '$previousMonthName Paid',
+                        subtitle: Formatters.formatCurrency(prevMonthPaidAmount),
+                        icon: Icons.verified_outlined,
+                        iconBgColor: AppColors.successIconBg,
+                        cardBgColor: AppColors.successTileBg,
+                        onTap: () => showPaidStudentsDialog(
+                          context,
+                          title: previousMonthName,
+                          paidPayments: paid,
+                          dynamicStudents: p.students,
+                          filterDate: previousMonthDate,
+                        ),
+                      ),
+                      GridTileCard(
+                        title: '$doublePreviousMonthName Paid',
+                        subtitle: Formatters.formatCurrency(doublePrevMonthPaidAmount),
+                        icon: Icons.task_alt,
+                        iconBgColor: const Color(0xFF2E7D32),
+                        cardBgColor: const Color(0xFFDCEDC8),
+                        onTap: () => showPaidStudentsDialog(
+                          context,
+                          title: doublePreviousMonthName,
+                          paidPayments: paid,
+                          dynamicStudents: p.students,
+                          filterDate: doublePreviousMonthDate,
+                        ),
+                      ),
+                      GridTileCard(
+                        title: 'Overall Paid',
+                        subtitle: Formatters.formatCurrency(totalIncome),
+                        icon: Icons.check_circle_outline,
+                        iconBgColor: AppColors.headerGradientStart,
+                        cardBgColor: const Color(0xFFE8EAF6),
+                        onTap: () => showPaidStudentsDialog(
+                          context,
+                          title: 'Overall',
+                          paidPayments: paid,
+                          dynamicStudents: p.students,
+                          filterDate: null,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                        fontSize: 12, color: Colors.grey),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Recent Paid Fees',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      TextButton(
+                        onPressed: () {},
+                        child: const Text('View All', style: TextStyle(color: Colors.deepPurple)),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 8),
+                  ...paid.take(3).map((e) {
+                    final d = DateTime.parse(e['date']);
+                    return RecentFeeCard(
+                      title: 'Student ID: ${e['studentId']}',
+                      dateText: '${d.day}/${d.month}/${d.year}',
+                      amount: 'TK ${e['amount']}',
+                      badgeText: 'Paid',
+                      badgeColor: Colors.purple.shade50,
+                      badgeTextColor: Colors.purple,
+                      iconBg: const Color(0xFFF0EFFF),
+                    );
+                  }),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Recent Due Fees',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      TextButton(
+                        onPressed: () {},
+                        child: const Text('View All', style: TextStyle(color: Colors.deepPurple)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ...assigned.take(3).map((e) {
+                    final d = DateTime.parse(e['date']);
+                    return RecentFeeCard(
+                      title: 'Student ID: ${e['studentId']}',
+                      dateText: '${d.day}/${d.month}/${d.year}',
+                      amount: 'TK ${e['amount']}',
+                      badgeText: 'Due',
+                      badgeColor: Colors.orange.shade50,
+                      badgeTextColor: Colors.orange.shade800,
+                      iconBg: const Color(0xFFFFF3E0),
+                    );
+                  }),
                 ],
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  /// ================= TABLE CARD =================
-  Widget _tableCard({
-    required String title,
-    required List<String> headers,
-    required List<List<String>> rows,
-  }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style:
-                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columns:
-                headers.map((h) => DataColumn(label: Text(h))).toList(),
-                rows: rows
-                    .map(
-                      (r) => DataRow(
-                    cells:
-                    r.map((c) => DataCell(Text(c))).toList(),
-                  ),
-                )
-                    .toList(),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

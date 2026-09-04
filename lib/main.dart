@@ -54,16 +54,22 @@ class MainNav extends StatefulWidget {
 class _MainNavState extends State<MainNav> {
   int index = 0;
 
-  final pages = const [
-    HomeScreen(),
-    BatchScreen(),
-    StudentScreen(),
-    AccountScreen(), // make sure this exists
-    SettingsScreen(),
-  ];
+  void _navigateToTab(int tabIndex) {
+    setState(() {
+      index = tabIndex;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      HomeScreen(onNavigate: _navigateToTab), // Pass the callback here
+      const BatchScreen(),
+      const StudentScreen(),
+      const AccountScreen(),
+      const SettingsScreen(),
+    ];
+
     return Scaffold(
       body: pages[index],
       bottomNavigationBar: NavigationBar(
