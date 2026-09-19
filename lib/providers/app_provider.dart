@@ -96,7 +96,6 @@ class AppProvider extends ChangeNotifier {
     final year = DateTime.now().year % 100; // last 2 digits (e.g. 26)
     final yearPrefix = year.toString().padLeft(2, '0');
 
-    // Get all student IDs of current year
     final currentYearIds = students
         .map((s) => s.id)
         .where((id) => id.startsWith(yearPrefix))
@@ -105,7 +104,6 @@ class AppProvider extends ChangeNotifier {
     int nextNumber = 1;
 
     if (currentYearIds.isNotEmpty) {
-      // Extract last 3 digits and find max
       final numbers = currentYearIds.map((id) {
         return int.tryParse(id.substring(2)) ?? 0;
       }).toList();
@@ -113,14 +111,12 @@ class AppProvider extends ChangeNotifier {
       nextNumber = numbers.reduce((a, b) => a > b ? a : b) + 1;
     }
 
-    // Safety: limit 001–999
     if (nextNumber > 999) {
       throw Exception("Student ID limit reached for year $yearPrefix");
     }
 
     final suffix = nextNumber.toString().padLeft(3, '0');
-
-    return '$yearPrefix$suffix'; // e.g. 26001
+    return '$yearPrefix$suffix';
   }
 
   Future<void> addStudent({
@@ -130,7 +126,7 @@ class AppProvider extends ChangeNotifier {
     required double fee,
     required String batchId,
   }) async {
-    final id = generateStudentId(); // ✅ now uses new logic
+    final id = generateStudentId();
     studentBox.put(id, {
       'id': id,
       'name': name,
@@ -142,7 +138,6 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
     await _saveStudentsToFirebase();
   }
-
 
   Future<void> updateStudent({
     required String id,
@@ -201,6 +196,8 @@ class AppProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  // ================= PAYMENTS =================
 
   void assignMonth({
     required String studentId,
@@ -269,18 +266,58 @@ class AppProvider extends ChangeNotifier {
       p['synced'] = false;
       paymentBox.put(key, p);
       notifyListeners();
-      syncPaymentsToFirebase(); // ✅ Save to Firebase immediately
+      syncPaymentsToFirebase();
     }
   }
 
-  List<Map<String, dynamic>> paymentHistory(String studentId) =>
-      paymentBox.values
-          .map((e) => Map<String, dynamic>.from(e))
-          .where((e) => e['studentId'] == studentId)
-          .toList();
+  void cancelFee(
+      String studentId, {
+        required int month,
+        required int year,
+        required double originalMonthlyFee,
+      }) {
+    final key = paymentBox.keys.cast<String?>().firstWhere(
+          (k) {
+        final p = Map<String, dynamic>.from(paymentBox.get(k));
+        final d = DateTime.parse(p['date']);
+        return p['studentId'] == studentId &&
+            d.month == month &&
+            d.year == year;
+      },
+      orElse: () => null,
+    );
 
-  double get totalIncome =>
-      paymentBox.values.fold(0.0, (s, e) => s + (e['amount'] ?? 0));
+    if (key != null) {
+      final p = Map<String, dynamic>.from(paymentBox.get(key));
+      p['amount'] = originalMonthlyFee;
+      p['status'] = 'assigned';
+      p['synced'] = false;
+      paymentBox.put(key, p);
+      notifyListeners();
+      syncPaymentsToFirebase();
+    }
+  }
+
+  List<Map<String, dynamic>> paymentHistory(String studentId) {
+    final studentExists = studentBox.containsKey(studentId);
+    if (!studentExists) return [];
+
+    return paymentBox.values
+        .map((e) => Map<String, dynamic>.from(e))
+        .where((e) => e['studentId'] == studentId)
+        .toList();
+  }
+
+  double get totalIncome {
+    final activeStudentIds = students.map((s) => s.id).toSet();
+    return paymentBox.values.fold(0.0, (sum, e) {
+      final p = Map<String, dynamic>.from(e);
+      if (activeStudentIds.contains(p['studentId']) && p['status'] == 'paid') {
+        return sum + (p['amount'] ?? 0);
+      }
+      return sum;
+    });
+  }
 
   // ================= PAYMENT FIREBASE SYNC =================
 

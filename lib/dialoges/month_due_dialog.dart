@@ -14,7 +14,7 @@ void showMonthDueStudentsDialog(
 
   // 1. Create a Set of existing active student IDs for fast lookup
   final activeStudentIds = students
-      .map((s) => s.id?.toString())
+      .map((s) => s is Map ? s['id']?.toString() : s.id?.toString())
       .where((id) => id != null && id.isNotEmpty)
       .toSet();
 
@@ -38,7 +38,7 @@ void showMonthDueStudentsDialog(
       if (payment['date'] != null) {
         try {
           final d = DateTime.parse(payment['date']);
-          paymentMonth = DateFormat('MMM').format(d); // e.g., "Jan", "Feb"
+          paymentMonth = DateFormat('MMM').format(d);
         } catch (_) {}
       }
 
@@ -136,25 +136,55 @@ void showMonthDueStudentsDialog(
               final studentId = item['studentId']?.toString() ?? '';
 
               // Find matching student by ID safely
-              final student = students.firstWhereOrNull(
-                    (s) => s.id?.toString() == studentId,
-              );
+              final dynamic student = students.firstWhereOrNull((s) {
+                if (s is Map) {
+                  return s['id']?.toString() == studentId;
+                }
+                return s.id?.toString() == studentId;
+              });
 
-              // Extract Student Name & Class safely
-              final String studentName = (student?.name != null &&
-                  student.name.toString().isNotEmpty)
-                  ? student.name.toString()
-                  : 'Student #$studentId';
+              // Extract Student Name safely
+              String studentName = 'Student #$studentId';
+              if (student != null) {
+                if (student is Map) {
+                  studentName = student['name']?.toString() ?? studentName;
+                } else {
+                  try {
+                    final name = (student as dynamic).name?.toString();
+                    if (name != null && name.isNotEmpty) studentName = name;
+                  } catch (_) {}
+                }
+              }
 
+              // Extract Student Class safely across all potential field keys
               String studentClass = 'N/A';
               if (student != null) {
-                try {
-                  studentClass = (student as dynamic).sClass?.toString() ??
-                      (student as dynamic).studentClass?.toString() ??
-                      (student as dynamic).className?.toString() ??
+                if (student is Map) {
+                  studentClass = student['sClass']?.toString() ??
+                      student['studentClass']?.toString() ??
+                      student['className']?.toString() ??
+                      student['class']?.toString() ??
+                      student['batch']?.toString() ??
                       'N/A';
-                } catch (_) {
-                  studentClass = 'N/A';
+                } else {
+                  try {
+                    final dynamic s = student;
+                    final resolvedClass = s.sClass ??
+                        s.studentClass ??
+                        s.className ??
+                        s.sclass ??
+                        s.batch;
+                    if (resolvedClass != null) {
+                      studentClass = resolvedClass.toString();
+                    }
+                  } catch (_) {
+                    try {
+                      final dynamic s = student;
+                      studentClass = s.class1?.toString() ?? 'N/A';
+                    } catch (_) {
+                      studentClass = 'N/A';
+                    }
+                  }
                 }
               }
 
