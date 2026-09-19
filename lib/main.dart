@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -40,10 +41,36 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         home: MainNav(),
       ),
+=======
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'screens/first_screen.dart';
+import 'package:in_app_update/in_app_update.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  runApp(const QuizApp());
+}
+
+class QuizApp extends StatelessWidget {
+  const QuizApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: "হাবলু কুইজ",
+      theme: ThemeData(primarySwatch: Colors.indigo),
+      home: const FirstScreenWrapper(), // Wrap first screen to check updates
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
     );
   }
 }
 
+<<<<<<< HEAD
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
 
@@ -58,10 +85,43 @@ class _MainNavState extends State<MainNav> {
     setState(() {
       index = tabIndex;
     });
+=======
+/// This widget wraps your FirstScreen to check app updates
+class FirstScreenWrapper extends StatefulWidget {
+  const FirstScreenWrapper({super.key});
+
+  @override
+  State<FirstScreenWrapper> createState() => _FirstScreenWrapperState();
+}
+
+class _FirstScreenWrapperState extends State<FirstScreenWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    _checkUpdate();
+  }
+
+  /// -------------------------
+  /// Check for update using in_app_update package
+  /// -------------------------
+  Future<void> _checkUpdate() async {
+    try {
+      AppUpdateInfo updateInfo = await InAppUpdate.checkForUpdate();
+
+      if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
+        // Force immediate update
+        await InAppUpdate.performImmediateUpdate();
+      }
+    } catch (e) {
+      // If update check fails, just continue to app
+      debugPrint("Update check failed: $e");
+    }
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
   }
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     final pages = [
       HomeScreen(onNavigate: _navigateToTab), // Pass the callback here
       const BatchScreen(),
@@ -84,5 +144,8 @@ class _MainNavState extends State<MainNav> {
         ],
       ),
     );
+=======
+    return const FirstScreen(); // Load your first screen normally
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
   }
 }

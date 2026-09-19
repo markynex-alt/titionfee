@@ -5,7 +5,11 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
+<<<<<<< HEAD
 	<string>Tuitionfee</string>
+=======
+	<string>Hablu Quiz</string>
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +17,11 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
+<<<<<<< HEAD
 	<string>tuitionfee</string>
+=======
+	<string>hablu_quiz</string>
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

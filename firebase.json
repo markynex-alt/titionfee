@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"flutter":{"platforms":{"android":{"default":{"projectId":"tuitionfee-67718","appId":"1:1222743060:android:5a64b99d694efc0bb70301","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"tuitionfee-67718","configurations":{"android":"1:1222743060:android:5a64b99d694efc0bb70301","ios":"1:1222743060:ios:e5f3a82f7c768425b70301"}}}}}}
+=======
+{"flutter":{"platforms":{"android":{"default":{"projectId":"habluquiz","appId":"1:985365100623:android:dad9bb0cbaf81c66dad23a","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"habluquiz","configurations":{"android":"1:985365100623:android:dad9bb0cbaf81c66dad23a","ios":"1:985365100623:ios:ece9cf249426c92adad23a","web":"1:985365100623:web:5c52c11a22598033dad23a"}}}}}}
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6

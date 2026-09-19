@@ -7,12 +7,21 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+<<<<<<< HEAD
 import 'package:tuition_fee/main.dart';
+=======
+
+import 'package:hablu_quiz/main.dart';
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
+<<<<<<< HEAD
     await tester.pumpWidget(const MyApp());
+=======
+    await tester.pumpWidget(const QuizApp());
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

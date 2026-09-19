@@ -1,12 +1,19 @@
 {
   "project_info": {
+<<<<<<< HEAD
     "project_number": "1222743060",
     "project_id": "tuitionfee-67718",
     "storage_bucket": "tuitionfee-67718.firebasestorage.app"
+=======
+    "project_number": "985365100623",
+    "project_id": "habluquiz",
+    "storage_bucket": "habluquiz.firebasestorage.app"
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
   },
   "client": [
     {
       "client_info": {
+<<<<<<< HEAD
         "mobilesdk_app_id": "1:1222743060:android:0eb09240965d6024b70301",
         "android_client_info": {
           "package_name": "com.tuitionfee.app"
@@ -21,10 +28,22 @@
       "api_key": [
         {
           "current_key": "AIzaSyDINq1wLl4suonKOChgov843tywF5TfzUg"
+=======
+        "mobilesdk_app_id": "1:985365100623:android:dad9bb0cbaf81c66dad23a",
+        "android_client_info": {
+          "package_name": "com.markynex1.hablu_quiz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiSURGoauIGHT90s4157-0xryE2lgppw8"
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
         }
       ],
       "services": {
         "appinvite_service": {
+<<<<<<< HEAD
           "other_platform_oauth_client": [
             {
               "client_id": "1222743060-292lpfs5ktq5tgfhupfveu62lt7rv5kh.apps.googleusercontent.com",
@@ -38,6 +57,9 @@
               }
             }
           ]
+=======
+          "other_platform_oauth_client": []
+>>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
         }
       }
     }
