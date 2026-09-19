@@ -62,10 +62,14 @@ void showPaidStudentsDialog(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   studentName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 subtitle: Text(
                   'Paid on ${DateFormat('dd MMM yyyy').format(date)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 trailing: Text(

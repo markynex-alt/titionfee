@@ -650,21 +650,26 @@ class _AccountScreenState extends State<AccountScreen> {
                               ),
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              s.phone.isNotEmpty ? s.phone : "No phone",
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            Expanded(
+                              child: Text(
+                                s.phone.isNotEmpty ? s.phone : "No phone",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -683,11 +688,12 @@ class _AccountScreenState extends State<AccountScreen> {
                 child: Divider(height: 1),
               ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildSubDetailItem("Class", s.studentClass),
-                  _buildSubDetailItem("Batch", batchName),
-                  _buildSubDetailItem("Monthly Fee", "${p.currencySymbol} ${s.monthlyFee.toInt()}"),
+                  Expanded(child: _buildSubDetailItem("Class", s.studentClass)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildSubDetailItem("Batch", batchName)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildSubDetailItem("Monthly Fee", "${p.currencySymbol} ${s.monthlyFee.toInt()}")),
                 ],
               ),
               const SizedBox(height: 12),
@@ -758,15 +764,21 @@ class _AccountScreenState extends State<AccountScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              "Payment Ledger",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.black87,
+            const Expanded(
+              child: Text(
+                "Payment Ledger",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
               ),
             ),
+            const SizedBox(width: 8),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _buildFilterButton('All'),
                 const SizedBox(width: 4),
@@ -789,10 +801,17 @@ class _AccountScreenState extends State<AccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        ),
         const SizedBox(height: 2),
         Text(
           value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
         ),
       ],

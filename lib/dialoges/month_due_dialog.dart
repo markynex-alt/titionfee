@@ -238,6 +238,8 @@ void showMonthDueStudentsDialog(
                 ),
                 title: Text(
                   studentName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -245,6 +247,8 @@ void showMonthDueStudentsDialog(
                 ),
                 subtitle: Text(
                   'Class: $studentClass | ID: $studentId$monthText',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 11,
                     color: Colors.grey,
