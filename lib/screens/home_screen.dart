@@ -21,39 +21,10 @@ class HomeScreen extends StatelessWidget {
     final p = context.watch<AppProvider>();
     final now = DateTime.now();
 
-    final payments = p.paymentBox.values
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
-
     final activeStudentIds = p.students
-        .map((s) => s.id?.toString())
-        .where((id) => id != null && id.isNotEmpty)
+        .map((s) => s.id)
+        .where((id) => id.isNotEmpty)
         .toSet();
-
-    final paid = payments.where((e) {
-      final isPaid = e['status'] == 'paid';
-      final studentId = e['studentId']?.toString() ?? '';
-      return isPaid && activeStudentIds.contains(studentId);
-    }).toList();
-
-    final assigned = payments.where((e) {
-      final isAssigned = e['status'] == 'assigned';
-      final studentId = e['studentId']?.toString() ?? '';
-      return isAssigned && activeStudentIds.contains(studentId);
-    }).toList();
-
-    double sum(List<Map<String, dynamic>> list) =>
-        list.fold(0.0, (s, e) => s + (e['amount'] ?? 0));
-
-    double currentMonthSum(List<Map<String, dynamic>> list) => list
-        .where((e) {
-      final d = DateTime.parse(e['date']);
-      return d.month == now.month && d.year == now.year;
-    })
-        .fold(0.0, (s, e) => s + (e['amount'] ?? 0));
-
-    final totalDue = sum(assigned);
-    final totalIncome = sum(paid);
 
     final previousMonthDate = DateTime(now.year, now.month - 1, 1);
     final doublePreviousMonthDate = DateTime(now.year, now.month - 2, 1);
@@ -61,19 +32,69 @@ class HomeScreen extends StatelessWidget {
     final previousMonthName = DateFormat('MMM').format(previousMonthDate);
     final doublePreviousMonthName = DateFormat('MMM').format(doublePreviousMonthDate);
 
-    double getMonthDue(List<Map<String, dynamic>> list, DateTime date) => list
-        .where((e) {
-      final d = DateTime.parse(e['date']);
-      return d.month == date.month && d.year == date.year;
-    })
-        .fold(0.0, (s, e) => s + (e['amount'] ?? 0));
+    final paid = <Map<String, dynamic>>[];
+    final assigned = <Map<String, dynamic>>[];
 
-    final prevMonthDueAmount = getMonthDue(assigned, previousMonthDate);
-    final doublePrevMonthDueAmount = getMonthDue(assigned, doublePreviousMonthDate);
+    double totalIncome = 0.0;
+    double totalDue = 0.0;
+    double monthPaidAmount = 0.0;
+    double prevMonthPaidAmount = 0.0;
+    double doublePrevMonthPaidAmount = 0.0;
+    double prevMonthDueAmount = 0.0;
+    double doublePrevMonthDueAmount = 0.0;
 
-    final monthPaidAmount = currentMonthSum(paid);
-    final prevMonthPaidAmount = getMonthDue(paid, previousMonthDate);
-    final doublePrevMonthPaidAmount = getMonthDue(paid, doublePreviousMonthDate);
+    // Single pass over payments for peak load performance
+    for (final e in p.paymentBox.values) {
+      if (e is! Map) continue;
+      final studentId = e['studentId']?.toString() ?? '';
+      if (!activeStudentIds.contains(studentId)) continue;
+
+      final m = Map<String, dynamic>.from(e);
+      final amt = (m['amount'] as num?)?.toDouble() ?? 0.0;
+      final status = m['status']?.toString();
+
+      DateTime? d;
+      try {
+        if (m['date'] != null) d = DateTime.parse(m['date']);
+      } catch (_) {}
+
+      if (status == 'paid') {
+        paid.add(m);
+        totalIncome += amt;
+        if (d != null) {
+          if (d.month == now.month && d.year == now.year) {
+            monthPaidAmount += amt;
+          } else if (d.month == previousMonthDate.month && d.year == previousMonthDate.year) {
+            prevMonthPaidAmount += amt;
+          } else if (d.month == doublePreviousMonthDate.month && d.year == doublePreviousMonthDate.year) {
+            doublePrevMonthPaidAmount += amt;
+          }
+        }
+      } else if (status == 'assigned') {
+        assigned.add(m);
+        totalDue += amt;
+        if (d != null) {
+          if (d.month == previousMonthDate.month && d.year == previousMonthDate.year) {
+            prevMonthDueAmount += amt;
+          } else if (d.month == doublePreviousMonthDate.month && d.year == doublePreviousMonthDate.year) {
+            doublePrevMonthDueAmount += amt;
+          }
+        }
+      }
+    }
+
+    // Sort recent feeds chronologically descending
+    paid.sort((a, b) {
+      final da = DateTime.tryParse(a['date'] ?? '') ?? DateTime(2000);
+      final db = DateTime.tryParse(b['date'] ?? '') ?? DateTime(2000);
+      return db.compareTo(da);
+    });
+
+    assigned.sort((a, b) {
+      final da = DateTime.tryParse(a['date'] ?? '') ?? DateTime(2000);
+      final db = DateTime.tryParse(b['date'] ?? '') ?? DateTime(2000);
+      return db.compareTo(da);
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -222,24 +243,41 @@ class HomeScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () => onNavigate?.call(3),
                         child: const Text('View All', style: TextStyle(color: Colors.deepPurple)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ...paid.take(3).map((e) {
-                    final d = DateTime.parse(e['date']);
-                    return RecentFeeCard(
-                      title: 'Student ID: ${e['studentId']}',
-                      dateText: '${d.day}/${d.month}/${d.year}',
-                      amount: 'TK ${e['amount']}',
-                      badgeText: 'Paid',
-                      badgeColor: Colors.purple.shade50,
-                      badgeTextColor: Colors.purple,
-                      iconBg: const Color(0xFFF0EFFF),
-                    );
-                  }),
+                  if (paid.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: const Center(
+                        child: Text("No fees collected yet", style: TextStyle(color: Colors.grey)),
+                      ),
+                    )
+                  else
+                    ...paid.take(3).map((e) {
+                      DateTime? d;
+                      try {
+                        d = DateTime.parse(e['date']);
+                      } catch (_) {}
+                      final dateStr = d != null ? '${d.day}/${d.month}/${d.year}' : 'N/A';
+                      return RecentFeeCard(
+                        title: 'Student ID: ${e['studentId']}',
+                        dateText: dateStr,
+                        amount: '${p.currencySymbol} ${e['amount']}',
+                        badgeText: 'Paid',
+                        badgeColor: Colors.purple.shade50,
+                        badgeTextColor: Colors.purple,
+                        iconBg: const Color(0xFFF0EFFF),
+                      );
+                    }),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -249,24 +287,41 @@ class HomeScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () => onNavigate?.call(3),
                         child: const Text('View All', style: TextStyle(color: Colors.deepPurple)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ...assigned.take(3).map((e) {
-                    final d = DateTime.parse(e['date']);
-                    return RecentFeeCard(
-                      title: 'Student ID: ${e['studentId']}',
-                      dateText: '${d.day}/${d.month}/${d.year}',
-                      amount: 'TK ${e['amount']}',
-                      badgeText: 'Due',
-                      badgeColor: Colors.orange.shade50,
-                      badgeTextColor: Colors.orange.shade800,
-                      iconBg: const Color(0xFFFFF3E0),
-                    );
-                  }),
+                  if (assigned.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: const Center(
+                        child: Text("No fees currently due", style: TextStyle(color: Colors.grey)),
+                      ),
+                    )
+                  else
+                    ...assigned.take(3).map((e) {
+                      DateTime? d;
+                      try {
+                        d = DateTime.parse(e['date']);
+                      } catch (_) {}
+                      final dateStr = d != null ? '${d.day}/${d.month}/${d.year}' : 'N/A';
+                      return RecentFeeCard(
+                        title: 'Student ID: ${e['studentId']}',
+                        dateText: dateStr,
+                        amount: '${p.currencySymbol} ${e['amount']}',
+                        badgeText: 'Due',
+                        badgeColor: Colors.orange.shade50,
+                        badgeTextColor: Colors.orange.shade800,
+                        iconBg: const Color(0xFFFFF3E0),
+                      );
+                    }),
                 ],
               ),
             ),

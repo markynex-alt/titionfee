@@ -12,23 +12,25 @@ class StudentScreen extends StatefulWidget {
 }
 
 class _StudentScreenState extends State<StudentScreen> {
-  bool _loading = true;
+  bool _loading = false;
   String _searchQuery = '';
   String? _selectedBatchFilter;
 
   @override
   void initState() {
     super.initState();
-    _loadStudents();
+    // Non-blocking background sync if auto-sync is on
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppProvider>().syncDataInBackground();
+    });
   }
 
-  Future<void> _loadStudents() async {
+  Future<void> _refreshStudents() async {
+    setState(() => _loading = true);
     final p = context.read<AppProvider>();
-    await p.loadStudentsFromFirebase();
+    await p.restoreFromFirebase(merge: true);
     if (mounted) {
-      setState(() {
-        _loading = false;
-      });
+      setState(() => _loading = false);
     }
   }
 
@@ -37,10 +39,12 @@ class _StudentScreenState extends State<StudentScreen> {
     final p = context.watch<AppProvider>();
 
     // Filter students by Search Query and Batch
+    final query = _searchQuery.trim().toLowerCase();
     final filteredStudents = p.students.where((s) {
-      final matchesSearch = s.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          s.id.toString().contains(_searchQuery) ||
-          s.phone.contains(_searchQuery);
+      final matchesSearch = query.isEmpty ||
+          s.name.toLowerCase().contains(query) ||
+          s.id.toLowerCase().contains(query) ||
+          (s.phone.isNotEmpty && s.phone.contains(query));
 
       final matchesBatch = _selectedBatchFilter == null || s.batchId == _selectedBatchFilter;
 
@@ -67,13 +71,13 @@ class _StudentScreenState extends State<StudentScreen> {
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Sync Students',
             onPressed: () async {
-              setState(() => _loading = true);
-              await _loadStudents();
-              if (mounted) {
+              await _refreshStudents();
+              if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text("Students list updated"),
                     duration: Duration(seconds: 1),
+                    behavior: SnackBarBehavior.floating,
                   ),
                 );
               }
@@ -109,7 +113,7 @@ class _StudentScreenState extends State<StudentScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
+                        color: Colors.black.withValues(alpha: 0.03),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -174,12 +178,14 @@ class _StudentScreenState extends State<StudentScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    "ID: ${s.id}  •  ${s.phone}",
+                                    s.phone.isNotEmpty
+                                        ? "ID: ${s.id}  •  ${s.phone}"
+                                        : "ID: ${s.id}  •  No phone",
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey.shade600,
+                                      color: s.phone.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade500,
                                     ),
                                   ),
                                 ),
@@ -200,7 +206,7 @@ class _StudentScreenState extends State<StudentScreen> {
                                   ),
                                 ),
                                 Text(
-                                  "TK ${s.monthlyFee}",
+                                  "${p.currencySymbol} ${s.monthlyFee.toInt()}",
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
@@ -296,7 +302,7 @@ class _StudentScreenState extends State<StudentScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.deepPurple.withOpacity(0.3),
+            color: Colors.deepPurple.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -345,7 +351,7 @@ class _StudentScreenState extends State<StudentScreen> {
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: Colors.white, size: 18),
@@ -499,8 +505,14 @@ class _StudentScreenState extends State<StudentScreen> {
     final nameCtrl = TextEditingController(text: student?.name ?? '');
     final classCtrl = TextEditingController(text: student?.studentClass ?? '');
     final phoneCtrl = TextEditingController(text: student?.phone ?? '');
-    final feeCtrl = TextEditingController(text: student?.monthlyFee.toString() ?? '');
+    final feeCtrl = TextEditingController(
+        text: student != null ? student.monthlyFee.toString() : '');
     String? batchId = student?.batchId;
+
+    // Default to first batch if adding new and batch exists
+    if (batchId == null && p.batches.isNotEmpty) {
+      batchId = p.batches.first.id;
+    }
 
     showDialog(
       context: context,
@@ -517,8 +529,9 @@ class _StudentScreenState extends State<StudentScreen> {
               children: [
                 TextField(
                   controller: nameCtrl,
+                  textCapitalization: TextCapitalization.words,
                   decoration: InputDecoration(
-                    labelText: "Student Name",
+                    labelText: "Student Name *",
                     prefixIcon: const Icon(Icons.person_outline),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -527,7 +540,7 @@ class _StudentScreenState extends State<StudentScreen> {
                 TextField(
                   controller: classCtrl,
                   decoration: InputDecoration(
-                    labelText: "Class",
+                    labelText: "Class *",
                     prefixIcon: const Icon(Icons.class_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -537,7 +550,8 @@ class _StudentScreenState extends State<StudentScreen> {
                   controller: phoneCtrl,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
-                    labelText: "Phone Number",
+                    labelText: "Phone Number (Optional)",
+                    hintText: "Optional",
                     prefixIcon: const Icon(Icons.phone_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -547,20 +561,27 @@ class _StudentScreenState extends State<StudentScreen> {
                   controller: feeCtrl,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: "Monthly Fee (TK)",
+                    labelText: "Monthly Fee (${p.currencySymbol}) *",
                     prefixIcon: const Icon(Icons.attach_money),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: batchId,
+                  initialValue: batchId,
                   decoration: InputDecoration(
-                    labelText: "Assign Batch",
+                    labelText: "Assign Batch *",
                     prefixIcon: const Icon(Icons.groups_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  items: p.batches
+                  items: p.batches.isEmpty
+                      ? [
+                    const DropdownMenuItem(
+                      value: '',
+                      child: Text("No batches created yet"),
+                    )
+                  ]
+                      : p.batches
                       .map((b) => DropdownMenuItem(value: b.id, child: Text(b.name)))
                       .toList(),
                   onChanged: (v) => setDialogState(() => batchId = v),
@@ -576,22 +597,35 @@ class _StudentScreenState extends State<StudentScreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               onPressed: () async {
+                // Phone number is NOT required!
                 if (nameCtrl.text.trim().isEmpty ||
                     classCtrl.text.trim().isEmpty ||
-                    phoneCtrl.text.trim().isEmpty ||
                     feeCtrl.text.trim().isEmpty ||
-                    batchId == null) {
+                    batchId == null ||
+                    batchId!.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Please fill all required fields")),
+                    const SnackBar(
+                      content: Text("Please fill all required fields (Name, Class, Fee, Batch)"),
+                      behavior: SnackBarBehavior.floating,
+                    ),
                   );
                   return;
                 }
 
                 final fee = double.tryParse(feeCtrl.text.trim());
-                if (fee == null) return;
+                if (fee == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Please enter a valid monthly fee"),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
 
                 Navigator.pop(context);
 
@@ -599,22 +633,40 @@ class _StudentScreenState extends State<StudentScreen> {
                   await p.addStudent(
                     name: nameCtrl.text.trim(),
                     studentClass: classCtrl.text.trim(),
-                    phone: phoneCtrl.text.trim(),
+                    phone: phoneCtrl.text.trim(), // optional!
                     fee: fee,
                     batchId: batchId!,
                   );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Student ${nameCtrl.text.trim()} added successfully"),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
                 } else {
                   await p.updateStudent(
                     id: student.id,
                     name: nameCtrl.text.trim(),
                     studentClass: classCtrl.text.trim(),
-                    phone: phoneCtrl.text.trim(),
+                    phone: phoneCtrl.text.trim(), // optional!
                     fee: fee,
                     batchId: batchId!,
                   );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Student ${nameCtrl.text.trim()} updated"),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
                 }
               },
-              child: Text(student == null ? "Save" : "Update", style: const TextStyle(color: Colors.white)),
+              child: Text(student == null ? "Save" : "Update"),
             ),
           ],
         ),
@@ -665,7 +717,7 @@ class _StudentScreenState extends State<StudentScreen> {
     showDialog(
       context: context,
       builder: (_) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             "Assign Month to ${student.name}",
@@ -692,7 +744,7 @@ class _StudentScreenState extends State<StudentScreen> {
                     ),
                   ))
                       .toList(),
-                  onChanged: (v) => setState(() => tempMonth = v!),
+                  onChanged: (v) => setDialogState(() => tempMonth = v!),
                 ),
                 Container(height: 20, width: 1, color: Colors.grey.shade400),
                 DropdownButton<int>(
@@ -707,7 +759,7 @@ class _StudentScreenState extends State<StudentScreen> {
                     ),
                   ))
                       .toList(),
-                  onChanged: (v) => setState(() => tempYear = v!),
+                  onChanged: (v) => setDialogState(() => tempYear = v!),
                 ),
               ],
             ),
@@ -736,6 +788,7 @@ class _StudentScreenState extends State<StudentScreen> {
                       "Month assigned successfully to ${student.name}",
                     ),
                     backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
                   ),
                 );
               },
@@ -752,7 +805,6 @@ class _StudentScreenState extends State<StudentScreen> {
     final p = context.read<AppProvider>();
     final payments = p
         .paymentHistory(student.id)
-        .map((e) => Map<String, dynamic>.from(e))
         .where((pmt) => pmt['status'] != 'paid')
         .map((pmt) => DateTime.parse(pmt['date']))
         .toList()
@@ -760,7 +812,10 @@ class _StudentScreenState extends State<StudentScreen> {
 
     if (payments.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No unpaid months available for this student")),
+        const SnackBar(
+          content: Text("No unpaid months available for this student"),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -781,12 +836,12 @@ class _StudentScreenState extends State<StudentScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Monthly Fee: TK ${student.monthlyFee}",
+                "Monthly Fee: ${p.currencySymbol} ${student.monthlyFee.toInt()}",
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.green),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<DateTime>(
-                value: selectedMonth,
+                initialValue: selectedMonth,
                 decoration: InputDecoration(
                   labelText: "Select Unpaid Month",
                   prefixIcon: const Icon(Icons.event_outlined),
@@ -824,6 +879,7 @@ class _StudentScreenState extends State<StudentScreen> {
                   SnackBar(
                     content: Text("Fee collected for ${DateFormat.MMMM().format(selectedMonth)}"),
                     backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
                   ),
                 );
               },
