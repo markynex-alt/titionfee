@@ -2,7 +2,7 @@ name: tuition_fee
 description: Tuition fee management app
 publish_to: "none"
 
-version: 1.0.0+4
+version: 1.1.0+5
 
 environment:
   sdk: ">=3.3.0 <4.0.0"

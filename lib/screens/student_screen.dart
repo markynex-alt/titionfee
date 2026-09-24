@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/app_provider.dart';
+import '../dialoges/subscription_dialog.dart';
 
 class StudentScreen extends StatefulWidget {
   const StudentScreen({super.key});
@@ -506,6 +507,14 @@ class _StudentScreenState extends State<StudentScreen> {
   void _showAddEditDialog(BuildContext context, {dynamic student}) {
     final p = context.read<AppProvider>();
 
+    if (student == null && !p.canAddStudent) {
+      SubscriptionDialog.show(
+        context,
+        reasonMessage: p.tr('student_limit_msg'),
+      );
+      return;
+    }
+
     final nameCtrl = TextEditingController(text: student?.name ?? '');
     final classCtrl = TextEditingController(text: student?.studentClass ?? '');
     final phoneCtrl = TextEditingController(text: student?.phone ?? '');
@@ -524,7 +533,7 @@ class _StudentScreenState extends State<StudentScreen> {
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            student == null ? "Add New Student" : "Edit Student Details",
+            student == null ? p.tr('add_new_student') : p.tr('edit_student_details'),
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           content: SingleChildScrollView(
@@ -535,7 +544,7 @@ class _StudentScreenState extends State<StudentScreen> {
                   controller: nameCtrl,
                   textCapitalization: TextCapitalization.words,
                   decoration: InputDecoration(
-                    labelText: "Student Name *",
+                    labelText: p.tr('student_name_label'),
                     prefixIcon: const Icon(Icons.person_outline),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -544,7 +553,7 @@ class _StudentScreenState extends State<StudentScreen> {
                 TextField(
                   controller: classCtrl,
                   decoration: InputDecoration(
-                    labelText: "Class *",
+                    labelText: p.tr('student_class_label'),
                     prefixIcon: const Icon(Icons.class_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -554,8 +563,8 @@ class _StudentScreenState extends State<StudentScreen> {
                   controller: phoneCtrl,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
-                    labelText: "Phone Number (Optional)",
-                    hintText: "Optional",
+                    labelText: p.tr('phone_number_optional'),
+                    hintText: p.tr('optional'),
                     prefixIcon: const Icon(Icons.phone_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -565,7 +574,7 @@ class _StudentScreenState extends State<StudentScreen> {
                   controller: feeCtrl,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: "Monthly Fee (${p.currencySymbol}) *",
+                    labelText: "${p.tr('monthly_fee_label')} (${p.currencySymbol}) *",
                     prefixIcon: const Icon(Icons.attach_money),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -574,15 +583,15 @@ class _StudentScreenState extends State<StudentScreen> {
                 DropdownButtonFormField<String>(
                   initialValue: batchId,
                   decoration: InputDecoration(
-                    labelText: "Assign Batch *",
+                    labelText: p.tr('assign_batch_label'),
                     prefixIcon: const Icon(Icons.groups_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   items: p.batches.isEmpty
                       ? [
-                    const DropdownMenuItem(
+                    DropdownMenuItem(
                       value: '',
-                      child: Text("No batches created yet"),
+                      child: Text(p.tr('no_batches_title')),
                     )
                   ]
                       : p.batches
@@ -596,7 +605,7 @@ class _StudentScreenState extends State<StudentScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(p.tr('cancel')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -612,8 +621,8 @@ class _StudentScreenState extends State<StudentScreen> {
                     batchId == null ||
                     batchId!.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Please fill all required fields (Name, Class, Fee, Batch)"),
+                    SnackBar(
+                      content: Text(p.tr('fill_required_fields')),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -623,10 +632,19 @@ class _StudentScreenState extends State<StudentScreen> {
                 final fee = double.tryParse(feeCtrl.text.trim());
                 if (fee == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Please enter a valid monthly fee"),
+                    SnackBar(
+                      content: Text(p.tr('valid_fee_error')),
                       behavior: SnackBarBehavior.floating,
                     ),
+                  );
+                  return;
+                }
+
+                if (student == null && !p.canAddStudent) {
+                  Navigator.pop(context);
+                  SubscriptionDialog.show(
+                    context,
+                    reasonMessage: p.tr('student_limit_msg'),
                   );
                   return;
                 }

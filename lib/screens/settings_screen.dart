@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/app_provider.dart';
+import '../dialoges/subscription_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,8 +16,96 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: "1222743060-292lpfs5ktq5tgfhupfveu62lt7rv5kh.apps.googleusercontent.com",
+  );
   bool _isAuthLoading = false;
+
+  void _showPlayStoreSha1HelpDialog() {
+    final isBn = context.read<AppProvider>().appLanguage == 'bn';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.security, color: Colors.orange, size: 24),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                isBn ? "গুগল সাইন-ইন সমাধান (SHA-1)" : "Play Store Google Sign-In Fix",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isBn
+                    ? "প্লে স্টোর থেকে ডাউনলোড করা অ্যাপে গুগল সাইন-ইন ব্যর্থ হওয়ার কারণ: গুগল প্লে কনসোলে অ্যাপ সাইনিং কি-এর SHA-1 ফিঙ্গারপ্রিন্ট ফায়ারবেস কনসোলে যুক্ত করা হয়নি।"
+                    : "When downloaded from Google Play Store, Google re-signs the app with Google's Play App Signing Key. Your Firebase Console requires this SHA-1 fingerprint.",
+                style: const TextStyle(fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isBn ? "সহজ ৩টি পদক্ষেপ:" : "Quick 3 Steps to Fix:",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blue),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      isBn
+                          ? "১. Google Play Console-এ যান -> App integrity -> App signing\n২. 'App signing key certificate SHA-1' কপি করুন\n৩. Firebase Console -> Project Settings -> Android App-এ গিয়ে 'Add fingerprint' এ পেস্ট করুন!"
+                          : "1. Google Play Console -> App integrity -> App signing\n2. Copy 'App signing key certificate SHA-1'\n3. Firebase Console -> Project Settings -> Android App -> Add fingerprint & paste!",
+                      style: const TextStyle(fontSize: 12, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                isBn
+                    ? "✓ নোট: আপনার অ্যাপের লোকাল ডাটাবেস সম্পূর্ণ সচল রয়েছে। আপনি এখনই কোনো সমস্যা ছাড়াই ব্যাচ ও শিক্ষার্থী পরিচালনা করতে পারেন।"
+                    : "✓ Note: Local offline mode is active and working normally. You can continue managing batches and students without interruption.",
+                style: TextStyle(fontSize: 12, color: Colors.green.shade800, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(isBn ? "বুঝেছি" : "Got It"),
+          ),
+        ],
+      ),
+    );
+  }
 
   String _getUserName(User? user) {
     if (user == null) return "Guest (Offline Mode)";
@@ -63,21 +152,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Signed in successfully & synchronized with Firebase!"),
+        SnackBar(
+          content: Text(provider.tr('success')),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Sign-in error: $e"),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      final errStr = e.toString();
+      if (errStr.contains('10') || errStr.contains('sign_in_failed') || errStr.contains('ApiException')) {
+        _showPlayStoreSha1HelpDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Sign-in error: $e"),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isAuthLoading = false);
@@ -359,16 +453,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Settings",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              p.tr('settings_title'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
             Text(
-              "Storage, Cloud Backup & Preferences",
-              style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.normal),
+              p.tr('settings_subtitle'),
+              style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.normal),
             ),
           ],
         ),
@@ -383,20 +477,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildAccountCard(user, isLoggedIn, userName),
               const SizedBox(height: 16),
 
-              // 2. Storage & Cloud Sync Section
+              // 2. Subscription & Plans
+              _buildSubscriptionCard(p),
+              const SizedBox(height: 16),
+
+              // 3. Storage & Cloud Sync Section
               _buildStorageSyncCard(p, isLoggedIn),
               const SizedBox(height: 16),
 
-              // 3. Local Database Statistics
+              // 4. Local Database Statistics
               _buildDatabaseOverview(p),
               const SizedBox(height: 16),
 
-              // 4. App Preferences
+              // 5. App Preferences (Currency, Language Ban/En, Clear Data)
               _buildPreferencesCard(p),
               const SizedBox(height: 16),
 
-              // 5. App Info & Version
-              _buildAppInfoCard(),
+              // 6. App Info & Version
+              _buildAppInfoCard(p),
               const SizedBox(height: 24),
             ],
           ),
@@ -859,6 +957,178 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // ---------------- SUBSCRIPTION & PLANS CARD ----------------
+  Widget _buildSubscriptionCard(AppProvider p) {
+    final isBn = p.appLanguage == 'bn';
+    final plan = p.currentPlan;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      p.tr('subscription_section_title'),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: plan.isFree ? Colors.grey.shade100 : Colors.amber.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    isBn ? plan.nameBn : plan.nameEn,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: plan.isFree ? Colors.grey.shade800 : Colors.deepOrange.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Text(
+              isBn
+                  ? "৫টি ব্যাচ ও ১০ জন শিক্ষার্থী পর্যন্ত বিনামূল্যে। এর অধিক ব্যবহারের জন্য আমাদের ওয়েবসাইট থেকে ৩টি প্রিমিয়াম প্ল্যানের যেকোনো একটি নির্বাচন করুন।"
+                  : "Up to 5 batches & 10 students are free. Upgrade to higher plans on our website for unlimited access.",
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.4),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isBn ? "ব্যাচ কোটা" : "Batch Quota",
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "${p.batches.length} / ${plan.isUnlimitedBatches ? (isBn ? 'সীমাহীন' : 'Unlimited') : plan.batchLimit}",
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isBn ? "শিক্ষার্থী কোটা" : "Student Quota",
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "${p.students.length} / ${plan.isUnlimitedStudents ? (isBn ? 'সীমাহীন' : 'Unlimited') : plan.studentLimit}",
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber.shade800,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                minimumSize: const Size(double.infinity, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.upgrade_rounded, size: 18),
+              label: Text(
+                p.tr('upgrade_plan'),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              onPressed: () => SubscriptionDialog.show(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------- LANGUAGE PICKER DIALOG ----------------
+  void _showLanguagePicker(AppProvider p) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(p.tr('app_language')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text("English"),
+              leading: const Icon(Icons.language),
+              trailing: p.appLanguage == 'en'
+                  ? const Icon(Icons.check, color: Colors.green)
+                  : null,
+              onTap: () {
+                p.setAppLanguage('en');
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: const Text("বাংলা (Bangla)"),
+              leading: const Icon(Icons.translate),
+              trailing: p.appLanguage == 'bn'
+                  ? const Icon(Icons.check, color: Colors.green)
+                  : null,
+              onTap: () {
+                p.setAppLanguage('bn');
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ---------------- PREFERENCES CARD ----------------
   Widget _buildPreferencesCard(AppProvider p) {
     return Container(
@@ -890,17 +1160,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: const Icon(Icons.tune_rounded, color: Colors.blue, size: 18),
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  "Preferences & Maintenance",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                Text(
+                  p.tr('preferences_title'),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
           ),
           const Divider(height: 1),
+
+          // Language Selector Option (Ban / En)
+          ListTile(
+            leading: const Icon(Icons.translate_rounded, color: Colors.indigo),
+            title: Text(p.tr('app_language'), style: const TextStyle(fontSize: 14)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    p.appLanguage == 'bn' ? "বাংলা (Ban)" : "English",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right, color: Colors.grey),
+              ],
+            ),
+            onTap: () => _showLanguagePicker(p),
+          ),
+          const Divider(height: 1),
+
+          // Currency Symbol
           ListTile(
             leading: const Icon(Icons.currency_exchange, color: Colors.green),
-            title: const Text("Currency Symbol", style: TextStyle(fontSize: 14)),
+            title: Text(p.tr('currency_symbol'), style: const TextStyle(fontSize: 14)),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -915,15 +1213,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _showCurrencyPicker(p),
           ),
           const Divider(height: 1),
+
+          // Clear Local Data
           ListTile(
             leading: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
-            title: const Text(
-              "Clear Local Data",
-              style: TextStyle(fontSize: 14, color: Colors.redAccent),
+            title: Text(
+              p.tr('clear_local_data'),
+              style: const TextStyle(fontSize: 14, color: Colors.redAccent),
             ),
-            subtitle: const Text(
-              "Removes local device database entries",
-              style: TextStyle(fontSize: 11),
+            subtitle: Text(
+              p.tr('clear_local_data_desc'),
+              style: const TextStyle(fontSize: 11),
             ),
             onTap: () => _handleResetLocalData(p),
           ),
@@ -933,7 +1233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // ---------------- APP INFO CARD ----------------
-  Widget _buildAppInfoCard() {
+  Widget _buildAppInfoCard(AppProvider p) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -961,42 +1261,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: const Icon(Icons.info_outline, color: Colors.teal, size: 18),
               ),
               const SizedBox(width: 10),
-              const Text(
-                "About Application",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              Text(
+                p.tr('about_app'),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Application Name", style: TextStyle(fontSize: 13, color: Colors.grey)),
-              Text("Tuition Fee Manager", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(p.tr('app_name_label'), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(p.tr('app_name_value'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 8),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Version", style: TextStyle(fontSize: 13, color: Colors.grey)),
-              Text("v1.0.0+4", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(p.tr('app_version_label'), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              const Text("v1.1.0+5", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
             ],
           ),
           const SizedBox(height: 8),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Offline Support", style: TextStyle(fontSize: 13, color: Colors.grey)),
-              Text("Enabled (Hive Engine)", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.green)),
+              Text(p.tr('offline_support_label'), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(p.tr('offline_support_val'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.green)),
             ],
           ),
           const SizedBox(height: 8),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Cloud Database", style: TextStyle(fontSize: 13, color: Colors.grey)),
-              Text("Firebase Cloud Firestore", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.deepPurple)),
+              Text(p.tr('cloud_db_label'), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(p.tr('cloud_db_val'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.deepPurple)),
             ],
           ),
         ],

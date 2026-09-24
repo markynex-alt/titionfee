@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../providers/app_provider.dart';
 import '../models/batch.dart';
+import '../dialoges/subscription_dialog.dart';
 
 class BatchScreen extends StatefulWidget {
   const BatchScreen({super.key});
@@ -401,23 +402,31 @@ class _BatchScreenState extends State<BatchScreen> {
 
   // ---------- ADD BATCH ----------
   void _addBatchDialog() {
-    final ctrl = TextEditingController();
     final p = context.read<AppProvider>();
+    if (!p.canAddBatch) {
+      SubscriptionDialog.show(
+        context,
+        reasonMessage: p.tr('batch_limit_msg'),
+      );
+      return;
+    }
+
+    final ctrl = TextEditingController();
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "Create New Batch",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          p.tr('create_new_batch'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           decoration: InputDecoration(
-            labelText: "Batch Name",
-            hintText: "e.g., Class 10 - Science",
+            labelText: p.tr('batch_name_label'),
+            hintText: p.tr('batch_name_hint'),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             prefixIcon: const Icon(Icons.school_outlined),
           ),
@@ -425,7 +434,7 @@ class _BatchScreenState extends State<BatchScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(p.tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -436,11 +445,20 @@ class _BatchScreenState extends State<BatchScreen> {
             onPressed: () async {
               if (ctrl.text.trim().isEmpty) return;
 
+              if (!p.canAddBatch) {
+                Navigator.pop(context);
+                SubscriptionDialog.show(
+                  context,
+                  reasonMessage: p.tr('batch_limit_msg'),
+                );
+                return;
+              }
+
               Navigator.pop(context);
               await p.addBatch(ctrl.text.trim());
               await _syncBatches();
             },
-            child: const Text("Save Batch", style: TextStyle(color: Colors.white)),
+            child: Text(p.tr('save_batch'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),

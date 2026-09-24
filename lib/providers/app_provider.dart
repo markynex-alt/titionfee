@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/batch.dart';
 import '../models/student.dart';
+import '../models/subscription_plan.dart';
+import '../utils/app_strings.dart';
 
 class AppProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -20,6 +22,97 @@ class AppProvider extends ChangeNotifier {
 
   String? _syncStatusMessage;
   String? get syncStatusMessage => _syncStatusMessage;
+
+  // Language Settings
+  String get appLanguage =>
+      settingsBox.get('app_language', defaultValue: 'en') as String;
+
+  Future<void> setAppLanguage(String lang) async {
+    await settingsBox.put('app_language', lang);
+    notifyListeners();
+  }
+
+  String tr(String key) => AppStrings.get(key, lang: appLanguage);
+
+  // Subscription & Plan Limits
+  String get currentPlanId {
+    final expiry = planExpiryDate;
+    final planId = settingsBox.get('plan_id', defaultValue: 'free') as String;
+    if (planId != 'free' && expiry != null && DateTime.now().isAfter(expiry)) {
+      // Revert expired plan to free tier
+      return 'free';
+    }
+    return planId;
+  }
+
+  DateTime? get planExpiryDate {
+    final expStr = settingsBox.get('plan_expiry') as String?;
+    if (expStr == null || expStr.isEmpty) return null;
+    return DateTime.tryParse(expStr);
+  }
+
+  SubscriptionPlan get currentPlan => SubscriptionPlan.getById(currentPlanId);
+
+  int get maxAllowedBatches => currentPlan.batchLimit;
+  int get maxAllowedStudents => currentPlan.studentLimit;
+
+  bool get canAddBatch {
+    if (maxAllowedBatches == -1) return true;
+    return batches.length < maxAllowedBatches;
+  }
+
+  bool get canAddStudent {
+    if (maxAllowedStudents == -1) return true;
+    return students.length < maxAllowedStudents;
+  }
+
+  Future<bool> activatePlanWithCode(String code) async {
+    final clean = code.trim().toUpperCase();
+    if (clean.isEmpty) return false;
+
+    String tier = 'starter';
+    int months = 1;
+
+    if (clean.contains('UNLIMITED') || clean.contains('PRO')) {
+      tier = 'unlimited';
+    } else if (clean.contains('STANDARD')) {
+      tier = 'standard';
+    } else if (clean.contains('STARTER')) {
+      tier = 'starter';
+    } else if (clean.startsWith('TF-')) {
+      tier = 'unlimited';
+    } else {
+      return false;
+    }
+
+    final monthMatch = RegExp(r'-(\d+)M').firstMatch(clean);
+    if (monthMatch != null) {
+      months = int.tryParse(monthMatch.group(1) ?? '1') ?? 1;
+    }
+
+    final now = DateTime.now();
+    final expiry = DateTime(now.year, now.month + months, now.day);
+
+    await settingsBox.put('plan_id', tier);
+    await settingsBox.put('plan_expiry', expiry.toIso8601String());
+    await settingsBox.put('activation_code', clean);
+
+    notifyListeners();
+
+    final user = _auth.currentUser;
+    if (user != null && user.email != null) {
+      try {
+        await _firestore.collection('subscriptions').doc(user.email).set({
+          'plan_id': tier,
+          'plan_expiry': expiry.toIso8601String(),
+          'activation_code': clean,
+          'updated_at': now.toIso8601String(),
+        }, SetOptions(merge: true));
+      } catch (_) {}
+    }
+
+    return true;
+  }
 
   // Settings
   bool get isAutoSyncEnabled =>
@@ -399,6 +492,15 @@ class AppProvider extends ChangeNotifier {
       await _saveStudentsToFirebase();
       await syncPaymentsToFirebase();
 
+      // Backup Subscription & Preferences
+      await _firestore.collection('subscriptions').doc(user.email).set({
+        'plan_id': currentPlanId,
+        'plan_expiry': settingsBox.get('plan_expiry'),
+        'activation_code': settingsBox.get('activation_code'),
+        'app_language': appLanguage,
+        'currency_symbol': currencySymbol,
+      }, SetOptions(merge: true));
+
       final now = DateTime.now().toIso8601String();
       await settingsBox.put('last_sync_time', now);
 
@@ -460,6 +562,21 @@ class AppProvider extends ChangeNotifier {
       if (!merge) await paymentBox.clear();
       for (final doc in paymentSnap.docs) {
         await paymentBox.put(doc.id, {...doc.data(), 'synced': true});
+      }
+
+      // 4. Subscription & Preferences
+      final subDoc = await _firestore.collection('subscriptions').doc(user.email).get();
+      if (subDoc.exists && subDoc.data() != null) {
+        final data = subDoc.data()!;
+        if (data['plan_id'] != null) {
+          await settingsBox.put('plan_id', data['plan_id']);
+        }
+        if (data['plan_expiry'] != null) {
+          await settingsBox.put('plan_expiry', data['plan_expiry']);
+        }
+        if (data['activation_code'] != null) {
+          await settingsBox.put('activation_code', data['activation_code']);
+        }
       }
 
       final now = DateTime.now().toIso8601String();

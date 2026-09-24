@@ -141,6 +141,8 @@ class _MainNavState extends State<MainNav> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.watch<AppProvider>();
+
     final pages = [
       HomeScreen(onNavigate: _navigateToTab),
       const BatchScreen(),
@@ -154,12 +156,32 @@ class _MainNavState extends State<MainNav> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (i) => setState(() => index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: "Home"),
-          NavigationDestination(icon: Icon(Icons.groups_outlined), selectedIcon: Icon(Icons.groups), label: "Batch"),
-          NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: "Students"),
-          NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet), label: "Account"),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: "Settings"),
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.dashboard_outlined),
+            selectedIcon: const Icon(Icons.dashboard),
+            label: p.tr('nav_home'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.groups_outlined),
+            selectedIcon: const Icon(Icons.groups),
+            label: p.tr('nav_batch'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.school_outlined),
+            selectedIcon: const Icon(Icons.school),
+            label: p.tr('nav_students'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: const Icon(Icons.account_balance_wallet),
+            label: p.tr('nav_account'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: p.tr('nav_settings'),
+          ),
         ],
       ),
     );
