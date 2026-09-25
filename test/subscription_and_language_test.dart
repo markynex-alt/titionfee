@@ -46,6 +46,9 @@ void main() {
       expect(AppStrings.get('nav_settings', lang: 'en'), 'Settings');
       expect(AppStrings.get('batches_title', lang: 'en'), 'Batches');
       expect(AppStrings.get('students_title', lang: 'en'), 'Students');
+      expect(AppStrings.get('subscription_plans_pricing', lang: 'en'), 'Subscription & Pricing Plans');
+      expect(AppStrings.get('plan_duration', lang: 'en'), 'Plan Duration');
+      expect(AppStrings.get('month_3', lang: 'en'), '3 Months');
     });
 
     test('Bengali translations return expected Bangla text', () {
@@ -55,6 +58,9 @@ void main() {
       expect(AppStrings.get('nav_settings', lang: 'bn'), 'সেটিংস');
       expect(AppStrings.get('batches_title', lang: 'bn'), 'ব্যাচসমূহ');
       expect(AppStrings.get('students_title', lang: 'bn'), 'শিক্ষার্থীবৃন্দ');
+      expect(AppStrings.get('subscription_plans_pricing', lang: 'bn'), 'সাবস্ক্রিপশন ও প্রাইসিং প্ল্যান');
+      expect(AppStrings.get('plan_duration', lang: 'bn'), 'প্ল্যানের মেয়াদ');
+      expect(AppStrings.get('month_3', lang: 'bn'), '৩ মাস');
     });
   });
 }

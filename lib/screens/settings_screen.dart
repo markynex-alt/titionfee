@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../providers/app_provider.dart';
 import '../dialoges/subscription_dialog.dart';
+import '../screens/subscription_plan_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -1070,20 +1071,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber.shade800,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                minimumSize: const Size(double.infinity, 44),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: const Icon(Icons.upgrade_rounded, size: 18),
-              label: Text(
-                p.tr('upgrade_plan'),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-              ),
-              onPressed: () => SubscriptionDialog.show(context),
+            child: Column(
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber.shade800,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    minimumSize: const Size(double.infinity, 44),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.rocket_launch_rounded, size: 18),
+                  label: Text(
+                    p.tr('subscription_plans_pricing'),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () => SubscriptionPlanScreen.navigate(context),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey.shade800,
+                    side: BorderSide(color: Colors.grey.shade300),
+                    minimumSize: const Size(double.infinity, 40),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.vpn_key_outlined, size: 16),
+                  label: Text(
+                    p.tr('enter_activation_code'),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  onPressed: () => SubscriptionDialog.show(context),
+                ),
+              ],
             ),
           ),
         ],

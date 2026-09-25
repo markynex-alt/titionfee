@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../providers/app_provider.dart';
 import '../utils/app_strings.dart';
+import '../screens/subscription_plan_screen.dart';
 
 class SubscriptionDialog extends StatefulWidget {
   final String? reasonMessage;
@@ -81,33 +82,41 @@ class _SubscriptionDialogState extends State<SubscriptionDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade50,
-                          borderRadius: BorderRadius.circular(12),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.workspace_premium, color: Colors.amber, size: 28),
                         ),
-                        child: const Icon(Icons.workspace_premium, color: Colors.amber, size: 28),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppStrings.get('subscription_section_title', lang: lang),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppStrings.get('subscription_section_title', lang: lang),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                isBn
+                                    ? "৫ ব্যাচ ও ১০ শিক্ষার্থীর উপরে প্ল্যান প্রয়োজন"
+                                    : "Upgrade for more than 5 batches & 10 students",
+                                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                          Text(
-                            isBn
-                                ? "৫ ব্যাচ ও ১০ শিক্ষার্থীর উপরে প্ল্যান প্রয়োজন"
-                                : "Upgrade for more than 5 batches & 10 students",
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.grey),
@@ -273,6 +282,26 @@ class _SubscriptionDialogState extends State<SubscriptionDialog> {
               ),
               const SizedBox(height: 18),
 
+              // Open Full Plan Page Button
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.deepPurple,
+                  side: const BorderSide(color: Colors.deepPurple, width: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.launch_rounded, size: 18),
+                label: Text(
+                  AppStrings.get('open_full_plan_page', lang: lang),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  SubscriptionPlanScreen.navigate(context, reason: widget.reasonMessage);
+                },
+              ),
+              const SizedBox(height: 10),
+
               // Website Purchase Link Button
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -399,13 +428,15 @@ class _SubscriptionDialogState extends State<SubscriptionDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 4,
                   children: [
                     Text(
                       title,
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: color),
                     ),
-                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
