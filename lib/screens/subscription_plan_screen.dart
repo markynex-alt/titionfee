@@ -156,46 +156,115 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                 ],
               ),
               const SizedBox(height: 16),
+              // Personal bKash & Nagad Direct Payment Box
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: Colors.amber.shade50.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: Colors.amber.shade300),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.payment, size: 20, color: Colors.deepOrange),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            isBn ? "সরাসরি বিকাশ ও নগদ পার্সোনাল নম্বর" : "Direct bKash & Nagad Personal",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.deepOrange),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.amber.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  AppProvider.ownerBkashNagadNumber,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.5),
+                                ),
+                                Text(
+                                  isBn ? "Send Money (পার্সোনাল)" : "Send Money (Personal)",
+                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepOrange,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.copy, size: 14),
+                            label: Text(
+                              isBn ? "নম্বর কপি" : "Copy Number",
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () {
+                              Clipboard.setData(const ClipboardData(text: AppProvider.ownerBkashNagadNumber));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(isBn ? "পেমেন্ট নম্বর কপি হয়েছে" : "Payment number copied!"),
+                                  backgroundColor: Colors.teal,
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     Text(
-                      p.tr('order_on_website_desc'),
-                      style: const TextStyle(fontSize: 13, height: 1.4),
+                      isBn
+                          ? "১. এই নম্বরে $formattedPrice ৳ Send Money করুন।\n২. নিচে অ্যাক্টিভেশন বক্সে আপনার TrxID বা কোড দিন এবং 'অ্যাক্টিভেট করুন' চাপুন। আপনার ভ্যালিডিটি অবিলম্বে বৃদ্ধি পাবে।"
+                          : "1. Send Money $totalPrice BDT to this number.\n2. Enter TrxID/Code in the activation box below to instantly extend validity.",
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade800, height: 1.4),
                     ),
                     const SizedBox(height: 10),
                     Wrap(
-                      spacing: 8,
+                      spacing: 6,
                       runSpacing: 6,
                       children: [
                         _buildChip("bKash", const Color(0xFFE2136E)),
                         _buildChip("Nagad", const Color(0xFFF7941D)),
                         _buildChip("Rocket", const Color(0xFF8C3494)),
-                        _buildChip("Bank Cards", const Color(0xFF1E293B)),
+                        _buildChip("Cards", const Color(0xFF1E293B)),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.deepPurple,
+                  side: const BorderSide(color: Colors.deepPurple),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                icon: const Icon(Icons.copy_rounded, size: 18),
+                icon: const Icon(Icons.language, size: 18),
                 label: Text(
                   p.tr('copy_website_link'),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 onPressed: () {
                   Clipboard.setData(const ClipboardData(text: "https://tuitionfee.app/pricing"));
@@ -922,8 +991,10 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     Text(
-                      p.tr('enter_activation_code'),
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      isBn
+                          ? "বিকাশ/নগদ 01825690912-এ পেমেন্ট করে TrxID বা কোড লিখুন"
+                          : "Pay to bKash/Nagad 01825690912 & enter TrxID or code to extend validity",
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                     ),
                   ],
                 ),

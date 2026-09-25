@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tuition_fee/models/subscription_plan.dart';
 import 'package:tuition_fee/utils/app_strings.dart';
+import 'package:tuition_fee/providers/app_provider.dart';
 
 void main() {
   group('Subscription Plans & Pricing Tests', () {
@@ -61,6 +62,12 @@ void main() {
       expect(AppStrings.get('subscription_plans_pricing', lang: 'bn'), 'সাবস্ক্রিপশন ও প্রাইসিং প্ল্যান');
       expect(AppStrings.get('plan_duration', lang: 'bn'), 'প্ল্যানের মেয়াদ');
       expect(AppStrings.get('month_3', lang: 'bn'), '৩ মাস');
+    });
+  });
+
+  group('Payment & Validity Configuration Tests', () {
+    test('Personal bKash and Nagad payment number is correctly set', () {
+      expect(AppProvider.ownerBkashNagadNumber, '01825690912');
     });
   });
 }

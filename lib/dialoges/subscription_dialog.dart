@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 
 import '../providers/app_provider.dart';
 import '../utils/app_strings.dart';
@@ -330,7 +331,67 @@ class _SubscriptionDialogState extends State<SubscriptionDialog> {
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              // Personal bKash/Nagad Payment Notice
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.payment, size: 18, color: Colors.deepOrange),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            isBn
+                                ? "পার্সোনাল বিকাশ ও নগদ: 01825690912"
+                                : "Personal bKash & Nagad: 01825690912",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.deepOrange),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            Clipboard.setData(const ClipboardData(text: AppProvider.ownerBkashNagadNumber));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(isBn ? "নম্বর কপি হয়েছে" : "Number copied!"),
+                                duration: const Duration(seconds: 1),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.teal,
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.amber.shade400),
+                            ),
+                            child: Text(
+                              isBn ? "কপি" : "Copy",
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.deepOrange),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      isBn
+                          ? "এই নম্বরে সাবস্ক্রিপশন ফি পাঠিয়ে নিচের বক্সে TrxID বা কোড লিখলে সাথে সাথে মেয়াদ বৃদ্ধি পাবে।"
+                          : "Send payment to this number and enter TrxID / code below to immediately increase plan validity.",
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade800, height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
 
               // Activation Code Input Box
               Container(

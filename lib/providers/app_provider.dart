@@ -66,11 +66,64 @@ class AppProvider extends ChangeNotifier {
     return students.length < maxAllowedStudents;
   }
 
+  static const String ownerBkashNagadNumber = "01825690912";
+
+  // Organization Profile
+  String get organizationName =>
+      settingsBox.get('org_name', defaultValue: '') as String;
+
+  String get contactPhone =>
+      settingsBox.get('contact_phone', defaultValue: '') as String;
+
+  bool get isOnboardingCompleted =>
+      settingsBox.get('onboarding_completed', defaultValue: false) as bool;
+
+  Future<void> saveOrganizationProfile({
+    required String orgName,
+    required String phone,
+  }) async {
+    final cleanOrg = orgName.trim();
+    final cleanPhone = phone.trim();
+    await settingsBox.put('org_name', cleanOrg);
+    await settingsBox.put('contact_phone', cleanPhone);
+    await settingsBox.put('onboarding_completed', true);
+    notifyListeners();
+
+    // Sync organization data to Firebase Cloud if user is signed in
+    final user = _auth.currentUser;
+    if (user != null && user.email != null) {
+      try {
+        await _firestore.collection('organizations').doc(user.email).set({
+          'org_name': cleanOrg,
+          'contact_phone': cleanPhone,
+          'email': user.email,
+          'display_name': user.displayName ?? '',
+          'photo_url': user.photoURL ?? '',
+          'updated_at': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+        await _firestore.collection('users').doc(user.email).set({
+          'org_name': cleanOrg,
+          'contact_phone': cleanPhone,
+          'email': user.email,
+          'display_name': user.displayName ?? '',
+          'photo_url': user.photoURL ?? '',
+          'last_active': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      } catch (_) {}
+    }
+  }
+
+  Future<void> completeOnboarding() async {
+    await settingsBox.put('onboarding_completed', true);
+    notifyListeners();
+  }
+
   Future<bool> activatePlanWithCode(String code) async {
     final clean = code.trim().toUpperCase();
     if (clean.isEmpty) return false;
 
-    String tier = 'starter';
+    String tier = 'standard';
     int months = 1;
 
     if (clean.contains('UNLIMITED') || clean.contains('PRO')) {
@@ -81,6 +134,10 @@ class AppProvider extends ChangeNotifier {
       tier = 'starter';
     } else if (clean.startsWith('TF-')) {
       tier = 'unlimited';
+    } else if (clean.length >= 6) {
+      // bKash or Nagad transaction code, TrxID, or payment voucher
+      tier = 'standard';
+      months = 1;
     } else {
       return false;
     }
@@ -91,11 +148,17 @@ class AppProvider extends ChangeNotifier {
     }
 
     final now = DateTime.now();
-    final expiry = DateTime(now.year, now.month + months, now.day);
+    // Increase validity: if current plan is already valid in future, extend from that date!
+    final existingExpiry = planExpiryDate;
+    final baseDate = (existingExpiry != null && existingExpiry.isAfter(now))
+        ? existingExpiry
+        : now;
+    final expiry = DateTime(baseDate.year, baseDate.month + months, baseDate.day);
 
     await settingsBox.put('plan_id', tier);
     await settingsBox.put('plan_expiry', expiry.toIso8601String());
     await settingsBox.put('activation_code', clean);
+    await settingsBox.put('payment_number', ownerBkashNagadNumber);
 
     notifyListeners();
 
@@ -106,8 +169,23 @@ class AppProvider extends ChangeNotifier {
           'plan_id': tier,
           'plan_expiry': expiry.toIso8601String(),
           'activation_code': clean,
+          'payment_number': ownerBkashNagadNumber,
+          'org_name': organizationName,
+          'contact_phone': contactPhone,
           'updated_at': now.toIso8601String(),
         }, SetOptions(merge: true));
+
+        // Log payment verification request for tracking
+        await _firestore.collection('payment_verifications').add({
+          'email': user.email,
+          'org_name': organizationName,
+          'contact_phone': contactPhone,
+          'code_or_trx': clean,
+          'plan_id': tier,
+          'months': months,
+          'payment_number': ownerBkashNagadNumber,
+          'created_at': FieldValue.serverTimestamp(),
+        });
       } catch (_) {}
     }
 
@@ -178,12 +256,19 @@ class AppProvider extends ChangeNotifier {
   }
 
   String batchNameById(String id) {
-    if (id.isEmpty) return 'No Batch';
-    final data = batchBox.get(id);
-    if (data is Map) {
-      return data['name']?.toString() ?? 'No Batch';
+    final trimmed = id.trim();
+    if (trimmed.isEmpty) return 'No Batch';
+    final data = batchBox.get(trimmed);
+    if (data is Map && data['name'] != null && data['name'].toString().trim().isNotEmpty) {
+      return data['name'].toString().trim();
     }
-    return 'No Batch';
+    // Also match against batches list by id or name
+    for (final b in batches) {
+      if (b.id == trimmed || b.name.toLowerCase() == trimmed.toLowerCase()) {
+        return b.name;
+      }
+    }
+    return trimmed;
   }
 
   // ================= STUDENT =================
@@ -193,21 +278,40 @@ class AppProvider extends ChangeNotifier {
     for (final e in studentBox.values) {
       if (e is Map) {
         final m = Map<String, dynamic>.from(e);
+        final bId = (m['batchId'] ?? m['batch'] ?? '').toString();
         list.add(Student(
           id: m['id']?.toString() ?? '',
           name: m['name']?.toString() ?? '',
-          studentClass: m['class']?.toString() ?? '',
+          studentClass: (m['class'] ?? m['studentClass'] ?? '').toString(),
           phone: m['phone']?.toString() ?? '',
-          monthlyFee: (m['fee'] as num?)?.toDouble() ?? 0.0,
-          batchId: m['batchId']?.toString() ?? '',
+          monthlyFee: (m['fee'] ?? m['monthlyFee'] as num?)?.toDouble() ?? 0.0,
+          batchId: bId,
         ));
       }
     }
     return list;
   }
 
-  List<Student> studentsByBatch(String batchId) =>
-      students.where((s) => s.batchId == batchId).toList();
+  List<Student> studentsByBatch(String batchIdentifier) {
+    final trimmed = batchIdentifier.trim();
+    if (trimmed.isEmpty) return [];
+
+    final matchingBatch = batches.where(
+      (b) => b.id.trim() == trimmed || b.name.trim().toLowerCase() == trimmed.toLowerCase()
+    ).firstOrNull;
+
+    final targetId = matchingBatch?.id.trim() ?? trimmed;
+    final targetName = matchingBatch?.name.trim().toLowerCase();
+
+    return students.where((s) {
+      final sBatch = s.batchId.trim();
+      if (sBatch.isEmpty) return false;
+      return sBatch == targetId ||
+             sBatch == trimmed ||
+             (targetName != null && sBatch.toLowerCase() == targetName) ||
+             (matchingBatch != null && sBatch == matchingBatch.name.trim());
+    }).toList();
+  }
 
   String generateStudentId() {
     final year = DateTime.now().year % 100; // e.g. 26
@@ -282,7 +386,7 @@ class AppProvider extends ChangeNotifier {
 
   // ================= PAYMENTS =================
 
-  void assignMonth({
+  bool assignMonth({
     required String studentId,
     required int month,
     required int year,
@@ -290,7 +394,7 @@ class AppProvider extends ChangeNotifier {
   }) {
     final exists = paymentBox.values.any((p) {
       if (p is! Map) return false;
-      if (p['studentId'] != studentId) return false;
+      if (p['studentId']?.toString() != studentId) return false;
       try {
         final d = DateTime.parse(p['date']);
         return d.month == month && d.year == year;
@@ -298,7 +402,7 @@ class AppProvider extends ChangeNotifier {
         return false;
       }
     });
-    if (exists) return;
+    if (exists) return false;
 
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     paymentBox.put(id, {
@@ -312,6 +416,7 @@ class AppProvider extends ChangeNotifier {
 
     notifyListeners();
     _triggerAutoSync();
+    return true;
   }
 
   void assignMonthToBatch(
@@ -397,11 +502,13 @@ class AppProvider extends ChangeNotifier {
   }
 
   List<Map<String, dynamic>> paymentHistory(String studentId) {
-    if (!studentBox.containsKey(studentId)) return [];
+    if (!studentBox.containsKey(studentId) && !students.any((s) => s.id == studentId)) {
+      return [];
+    }
 
     final list = <Map<String, dynamic>>[];
     for (final e in paymentBox.values) {
-      if (e is Map && e['studentId'] == studentId) {
+      if (e is Map && e['studentId']?.toString() == studentId) {
         list.add(Map<String, dynamic>.from(e));
       }
     }

@@ -48,7 +48,12 @@ class _StudentScreenState extends State<StudentScreen> {
           s.id.toLowerCase().contains(query) ||
           (s.phone.isNotEmpty && s.phone.contains(query));
 
-      final matchesBatch = _selectedBatchFilter == null || s.batchId == _selectedBatchFilter;
+      bool matchesBatch = true;
+      if (_selectedBatchFilter != null) {
+        final bName = p.batchNameById(_selectedBatchFilter!);
+        matchesBatch = s.batchId == _selectedBatchFilter ||
+            s.batchId.toLowerCase() == bName.toLowerCase();
+      }
 
       return matchesSearch && matchesBatch;
     }).toList();
@@ -522,11 +527,42 @@ class _StudentScreenState extends State<StudentScreen> {
     final classCtrl = TextEditingController(text: student?.studentClass ?? '');
     final phoneCtrl = TextEditingController(text: student?.phone ?? '');
     final feeCtrl = TextEditingController(
-        text: student != null ? student.monthlyFee.toString() : '');
-    String? batchId = student?.batchId;
+      text: student != null
+          ? (student.monthlyFee % 1 == 0
+              ? student.monthlyFee.toInt().toString()
+              : student.monthlyFee.toString())
+          : '',
+    );
 
-    // Default to first batch if adding new and batch exists
-    if (batchId == null && p.batches.isNotEmpty) {
+    // Resolve initial batchId safely
+    String? batchId;
+    if (student != null) {
+      final rawBatch = (student.batchId as String? ?? '').trim();
+      final matchById = p.batches.where((b) => b.id.trim() == rawBatch).firstOrNull;
+      if (matchById != null) {
+        batchId = matchById.id;
+      } else {
+        final matchByName = p.batches
+            .where((b) => b.name.trim().toLowerCase() == rawBatch.toLowerCase())
+            .firstOrNull;
+        if (matchByName != null) {
+          batchId = matchByName.id;
+        } else if (p.batches.isNotEmpty) {
+          batchId = p.batches.first.id;
+        } else {
+          batchId = '';
+        }
+      }
+    } else {
+      if (p.batches.isNotEmpty) {
+        batchId = p.batches.first.id;
+      } else {
+        batchId = '';
+      }
+    }
+
+    final hasBatches = p.batches.isNotEmpty;
+    if (hasBatches && !p.batches.any((b) => b.id == batchId)) {
       batchId = p.batches.first.id;
     }
 
@@ -584,23 +620,25 @@ class _StudentScreenState extends State<StudentScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: batchId,
+                  initialValue: hasBatches ? batchId : '',
                   decoration: InputDecoration(
                     labelText: p.tr('assign_batch_label'),
                     prefixIcon: const Icon(Icons.groups_outlined),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  items: p.batches.isEmpty
+                  items: !hasBatches
                       ? [
-                    DropdownMenuItem(
-                      value: '',
-                      child: Text(p.tr('no_batches_title')),
-                    )
-                  ]
+                          DropdownMenuItem(
+                            value: '',
+                            child: Text(p.tr('no_batches_title')),
+                          )
+                        ]
                       : p.batches
-                      .map((b) => DropdownMenuItem(value: b.id, child: Text(b.name)))
-                      .toList(),
-                  onChanged: (v) => setDialogState(() => batchId = v),
+                          .map((b) => DropdownMenuItem(value: b.id, child: Text(b.name)))
+                          .toList(),
+                  onChanged: hasBatches
+                      ? (v) => setDialogState(() => batchId = v)
+                      : null,
                 ),
               ],
             ),
@@ -621,8 +659,7 @@ class _StudentScreenState extends State<StudentScreen> {
                 if (nameCtrl.text.trim().isEmpty ||
                     classCtrl.text.trim().isEmpty ||
                     feeCtrl.text.trim().isEmpty ||
-                    batchId == null ||
-                    batchId!.isEmpty) {
+                    (hasBatches && (batchId == null || batchId!.isEmpty))) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(p.tr('fill_required_fields')),
@@ -654,13 +691,14 @@ class _StudentScreenState extends State<StudentScreen> {
 
                 Navigator.pop(context);
 
+                final safeBatchId = batchId ?? '';
                 if (student == null) {
                   await p.addStudent(
                     name: nameCtrl.text.trim(),
                     studentClass: classCtrl.text.trim(),
                     phone: phoneCtrl.text.trim(), // optional!
                     fee: fee,
-                    batchId: batchId!,
+                    batchId: safeBatchId,
                   );
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -678,7 +716,7 @@ class _StudentScreenState extends State<StudentScreen> {
                     studentClass: classCtrl.text.trim(),
                     phone: phoneCtrl.text.trim(), // optional!
                     fee: fee,
-                    batchId: batchId!,
+                    batchId: safeBatchId,
                   );
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -810,7 +848,7 @@ class _StudentScreenState extends State<StudentScreen> {
               ),
               onPressed: () {
                 Navigator.pop(context);
-                p.assignMonth(
+                final assigned = p.assignMonth(
                   studentId: student.id,
                   month: tempMonth,
                   year: tempYear,
@@ -818,17 +856,30 @@ class _StudentScreenState extends State<StudentScreen> {
                 );
                 final monthName = DateFormat.MMMM().format(DateTime(0, tempMonth));
                 final monthFormatted = AppStrings.formatMonth(monthName, lang: p.appLanguage);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isBn
-                          ? "${student.name}-এর জন্য $monthFormatted $tempYear এর ফি ধার্য করা হয়েছে"
-                          : "Month assigned successfully to ${student.name}",
+                if (assigned) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isBn
+                            ? "${student.name}-এর জন্য $monthFormatted $tempYear এর ফি ধার্য করা হয়েছে"
+                            : "Month assigned successfully to ${student.name}",
+                      ),
+                      backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
                     ),
-                    backgroundColor: Colors.green,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isBn
+                            ? "${student.name}-এর জন্য $monthFormatted $tempYear এর ফি ইতিমধ্যে নির্ধারিত রয়েছে"
+                            : "Month $monthFormatted $tempYear is already assigned to ${student.name}",
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
               },
               child: Text(
                 isBn ? "ফি ধার্য করুন" : "Assign Fee",
@@ -845,11 +896,22 @@ class _StudentScreenState extends State<StudentScreen> {
   void _collectFeeDialog(BuildContext context, dynamic student) {
     final p = context.read<AppProvider>();
     final isBn = p.appLanguage == 'bn';
-    final payments = p
-        .paymentHistory(student.id)
-        .where((pmt) => pmt['status'] != 'paid')
-        .map((pmt) => DateTime.parse(pmt['date']))
-        .toList()
+
+    // Safely parse unpaid payments & deduplicate by month/year
+    final rawPayments = p.paymentHistory(student.id);
+    final Map<String, DateTime> unpaidMonthMap = {};
+    for (final pmt in rawPayments) {
+      if (pmt['status'] == 'paid') continue;
+      final dateStr = pmt['date']?.toString();
+      if (dateStr == null) continue;
+      final d = DateTime.tryParse(dateStr);
+      if (d != null) {
+        final key = "${d.year}-${d.month}";
+        unpaidMonthMap[key] = DateTime(d.year, d.month, 1);
+      }
+    }
+
+    final payments = unpaidMonthMap.values.toList()
       ..sort((a, b) => a.compareTo(b));
 
     if (payments.isEmpty) {

@@ -115,6 +115,7 @@ class _BatchScreenState extends State<BatchScreen> {
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                     child: ListTile(
+                      onTap: () => _openBatchStudents(batch),
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 4),
                       leading: Container(
@@ -152,12 +153,15 @@ class _BatchScreenState extends State<BatchScreen> {
                             // Expanded to prevent 4.8px right overflow
                             Expanded(
                               child: Text(
-                                p.tr('enrolled_students').replaceAll('%d', studentCount.toString()),
+                                p.appLanguage == 'bn'
+                                    ? "$studentCount জন শিক্ষার্থী"
+                                    : "$studentCount enrolled students",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade700,
                                 ),
                               ),
                             ),
@@ -186,7 +190,9 @@ class _BatchScreenState extends State<BatchScreen> {
                               BorderRadius.circular(12),
                             ),
                             onSelected: (value) {
-                              if (value == 'assign_month') {
+                              if (value == 'view_students') {
+                                _openBatchStudents(batch);
+                              } else if (value == 'assign_month') {
                                 _assignMonthDialog(batch);
                               } else if (value == 'edit') {
                                 _editBatchDialog(batch);
@@ -195,6 +201,17 @@ class _BatchScreenState extends State<BatchScreen> {
                               }
                             },
                             itemBuilder: (_) => [
+                              PopupMenuItem(
+                                value: 'view_students',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.people_alt_outlined,
+                                        size: 18, color: Colors.deepPurple),
+                                    const SizedBox(width: 8),
+                                    Text(p.appLanguage == 'bn' ? "শিক্ষার্থী দেখুন" : "View Students"),
+                                  ],
+                                ),
+                              ),
                               PopupMenuItem(
                                 value: 'assign_month',
                                 child: Row(
@@ -238,7 +255,6 @@ class _BatchScreenState extends State<BatchScreen> {
                           ),
                         ],
                       ),
-                      onTap: () => _openBatchStudents(batch),
                     ),
                   ),
                 );

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 
 import '../providers/app_provider.dart';
 import '../dialoges/subscription_dialog.dart';
@@ -475,7 +476,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 1. Account & Profile Header Card
-              _buildAccountCard(user, isLoggedIn, userName),
+              _buildAccountCard(p, user, isLoggedIn, userName),
               const SizedBox(height: 16),
 
               // 2. Subscription & Plans
@@ -505,7 +506,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // ---------------- ACCOUNT CARD ----------------
-  Widget _buildAccountCard(User? user, bool isLoggedIn, String userName) {
+  void _showEditOrgDialog(AppProvider p) {
+    final orgCtrl = TextEditingController(text: p.organizationName);
+    final phoneCtrl = TextEditingController(text: p.contactPhone);
+    final isBn = p.appLanguage == 'bn';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          isBn ? "প্রতিষ্ঠানের তথ্য" : "Organization Details",
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: orgCtrl,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: isBn ? "কোচিং / প্রতিষ্ঠানের নাম" : "Organization Name",
+                prefixIcon: const Icon(Icons.business_rounded),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: isBn ? "যোগাযোগের ফোন নম্বর" : "Contact Phone",
+                prefixIcon: const Icon(Icons.phone_outlined),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(p.tr('cancel')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await p.saveOrganizationProfile(
+                orgName: orgCtrl.text.trim(),
+                phone: phoneCtrl.text.trim(),
+              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(isBn ? "তথ্য সংরক্ষিত হয়েছে" : "Profile updated successfully!"),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            child: Text(p.tr('save')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountCard(AppProvider p, User? user, bool isLoggedIn, String userName) {
+    final hasOrg = p.organizationName.isNotEmpty || p.contactPhone.isNotEmpty;
+    final isBn = p.appLanguage == 'bn';
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -623,6 +698,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
+          if (hasOrg) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.shade50.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.deepPurple.shade100),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.business_rounded, size: 18, color: Colors.deepPurple),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (p.organizationName.isNotEmpty)
+                          Text(
+                            p.organizationName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.deepPurple),
+                          ),
+                        if (p.contactPhone.isNotEmpty)
+                          Text(
+                            p.contactPhone,
+                            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                          ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.deepPurple),
+                    tooltip: isBn ? "তথ্য পরিবর্তন" : "Edit Profile",
+                    onPressed: () => _showEditOrgDialog(p),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: () => _showEditOrgDialog(p),
+                icon: const Icon(Icons.add_business_outlined, size: 16, color: Colors.deepPurple),
+                label: Text(
+                  isBn ? "+ প্রতিষ্ঠানের তথ্য যুক্ত করুন" : "+ Add Organization Info",
+                  style: const TextStyle(fontSize: 12, color: Colors.deepPurple, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 12),
@@ -1064,6 +1195,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                     ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.amber.shade200),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.payment, size: 16, color: Colors.deepOrange),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    isBn
+                        ? "বিকাশ ও নগদ পার্সোনাল: ${AppProvider.ownerBkashNagadNumber}"
+                        : "bKash & Nagad: ${AppProvider.ownerBkashNagadNumber}",
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                  ),
+                ),
+                InkWell(
+                  onTap: () {
+                    Clipboard.setData(const ClipboardData(text: AppProvider.ownerBkashNagadNumber));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(isBn ? "নম্বর কপি করা হয়েছে" : "Payment number copied!"),
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 1),
+                        backgroundColor: Colors.teal,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.amber.shade300),
+                    ),
+                    child: Text(
+                      isBn ? "কপি" : "Copy",
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                    ),
                   ),
                 ),
               ],

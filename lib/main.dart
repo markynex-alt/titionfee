@@ -11,6 +11,7 @@ import 'screens/batch_screen.dart';
 import 'screens/student_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/account_screen.dart';
+import 'dialoges/onboarding_dialog.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -132,6 +133,17 @@ class MainNav extends StatefulWidget {
 
 class _MainNavState extends State<MainNav> {
   int index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final p = context.read<AppProvider>();
+      if (!p.isOnboardingCompleted) {
+        OnboardingDialog.show(context);
+      }
+    });
+  }
 
   void _navigateToTab(int tabIndex) {
     setState(() {
