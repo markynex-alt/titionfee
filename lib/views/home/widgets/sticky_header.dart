@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../../utils/app_colors.dart';
+import '../../../providers/app_provider.dart';
 
 class HomeStickyHeader extends SliverPersistentHeaderDelegate {
   final double minHeight;
@@ -11,8 +13,8 @@ class HomeStickyHeader extends SliverPersistentHeaderDelegate {
     required this.maxHeight,
   });
 
-  String _getUserDisplayName(User? user) {
-    if (user == null) return "User";
+  String _getUserDisplayName(User? user, bool isBn) {
+    if (user == null) return isBn ? "গৃহশিক্ষক" : "User";
     if (user.displayName != null && user.displayName!.trim().isNotEmpty) {
       return user.displayName!.trim();
     }
@@ -22,12 +24,14 @@ class HomeStickyHeader extends SliverPersistentHeaderDelegate {
         return emailName[0].toUpperCase() + emailName.substring(1);
       }
     }
-    return "User";
+    return isBn ? "গৃহশিক্ষক" : "User";
   }
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     final topPadding = MediaQuery.of(context).padding.top;
+    final p = context.watch<AppProvider>();
+    final isBn = p.appLanguage == 'bn';
 
     return SizedBox.expand(
       child: Container(
@@ -49,7 +53,7 @@ class HomeStickyHeader extends SliverPersistentHeaderDelegate {
                 stream: FirebaseAuth.instance.authStateChanges(),
                 builder: (context, snapshot) {
                   final user = snapshot.data;
-                  final name = _getUserDisplayName(user);
+                  final name = _getUserDisplayName(user, isBn);
                   final firstName = name.split(' ').first;
 
                   return Column(
@@ -69,7 +73,9 @@ class HomeStickyHeader extends SliverPersistentHeaderDelegate {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Hello, $firstName 👋\nHave a great day ahead!',
+                        isBn
+                            ? 'স্বাগতম, $firstName 👋\nআপনার দিনটি শুভ হোক!'
+                            : 'Hello, $firstName 👋\nHave a great day ahead!',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 11,

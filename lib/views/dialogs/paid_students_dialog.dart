@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/app_provider.dart';
+import '../../utils/app_strings.dart';
 
 void showPaidStudentsDialog(
     BuildContext context, {
@@ -8,6 +12,10 @@ void showPaidStudentsDialog(
       required List dynamicStudents,
       DateTime? filterDate,
     }) {
+  final p = Provider.of<AppProvider>(context, listen: false);
+  final isBn = p.appLanguage == 'bn';
+  final displayTitle = AppStrings.formatMonth(title, lang: p.appLanguage);
+
   final filteredPayments = paidPayments.where((e) {
     if (filterDate == null) return true;
     final d = DateTime.parse(e['date']);
@@ -25,7 +33,7 @@ void showPaidStudentsDialog(
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '$title Payments',
+                isBn ? '$displayTitle পরিশোধিত শিক্ষার্থী তালিকা' : '$title Payments',
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
@@ -34,12 +42,12 @@ void showPaidStudentsDialog(
         content: SizedBox(
           width: double.maxFinite,
           child: filteredPayments.isEmpty
-              ? const Padding(
-            padding: EdgeInsets.all(20.0),
+              ? Padding(
+            padding: const EdgeInsets.all(20.0),
             child: Text(
-              'No paid records found for this period.',
+              p.tr('no_paid_students_msg'),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: const TextStyle(color: Colors.grey),
             ),
           )
               : ListView.separated(
@@ -55,8 +63,9 @@ void showPaidStudentsDialog(
               );
 
               final student = matchingStudents.isNotEmpty ? matchingStudents.first : null;
-              final studentName = student?.name ?? 'Student ID: $studentId';
+              final studentName = student?.name ?? (isBn ? 'শিক্ষার্থী আইডি: $studentId' : 'Student ID: $studentId');
               final date = DateTime.parse(payment['date']);
+              final dateFormatted = DateFormat('dd MMM yyyy').format(date);
 
               return ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -67,13 +76,13 @@ void showPaidStudentsDialog(
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 subtitle: Text(
-                  'Paid on ${DateFormat('dd MMM yyyy').format(date)}',
+                  isBn ? 'পরিশোধের তারিখ: $dateFormatted' : 'Paid on $dateFormatted',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 trailing: Text(
-                  '৳${payment['amount']}',
+                  '${p.currencySymbol}${payment['amount']}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -87,7 +96,7 @@ void showPaidStudentsDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            child: Text(p.tr('close')),
           ),
         ],
       );

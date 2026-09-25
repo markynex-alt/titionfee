@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:tuition_fee/providers/app_provider.dart';
 import 'package:tuition_fee/utils/app_colors.dart';
 import 'package:tuition_fee/utils/formatters.dart';
+import 'package:tuition_fee/utils/app_strings.dart';
 import 'package:tuition_fee/dialoges/month_due_dialog.dart';
 import 'package:tuition_fee/views/dialogs/paid_students_dialog.dart';
 import 'package:tuition_fee/views/home/widgets/grid_tile_card.dart';
@@ -119,23 +120,23 @@ class HomeScreen extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
                       GridTileCard(
-                        title: 'Students',
-                        subtitle: '${p.students.length} registered',
+                        title: p.tr('students_card_title'),
+                        subtitle: p.tr('students_card_subtitle').replaceAll('%d', p.students.length.toString()),
                         icon: Icons.school,
                         iconBgColor: AppColors.primaryIconBg,
                         cardBgColor: AppColors.primaryTileBg,
                         onTap: () => onNavigate?.call(2),
                       ),
                       GridTileCard(
-                        title: 'Batches',
-                        subtitle: '${p.batches.length} active',
+                        title: p.tr('batches_card_title'),
+                        subtitle: p.tr('batches_card_subtitle').replaceAll('%d', p.batches.length.toString()),
                         icon: Icons.groups,
                         iconBgColor: const Color(0xFFFF9800),
                         cardBgColor: const Color(0xFFFFF3E0),
                         onTap: () => onNavigate?.call(1),
                       ),
                       GridTileCard(
-                        title: '$previousMonthName Due',
+                        title: p.tr('month_due_title').replaceAll('%s', AppStrings.formatMonth(previousMonthName, lang: p.appLanguage)),
                         subtitle: Formatters.formatCurrency(prevMonthDueAmount),
                         icon: Icons.history,
                         iconBgColor: const Color(0xFFFF5722),
@@ -149,7 +150,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: '$doublePreviousMonthName Due',
+                        title: p.tr('month_due_title').replaceAll('%s', AppStrings.formatMonth(doublePreviousMonthName, lang: p.appLanguage)),
                         subtitle: Formatters.formatCurrency(doublePrevMonthDueAmount),
                         icon: Icons.history_toggle_off_rounded,
                         iconBgColor: AppColors.warningIconBg,
@@ -163,7 +164,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: 'Total Due',
+                        title: p.tr('total_due_title'),
                         subtitle: Formatters.formatCurrency(totalDue),
                         icon: Icons.warning_amber_rounded,
                         iconBgColor: AppColors.warningIconBg,
@@ -177,7 +178,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: 'This Month Paid',
+                        title: p.tr('this_month_paid_title'),
                         subtitle: Formatters.formatCurrency(monthPaidAmount),
                         icon: Icons.trending_up,
                         iconBgColor: const Color(0xFF00BCD4),
@@ -191,7 +192,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: '$previousMonthName Paid',
+                        title: p.tr('month_paid_title').replaceAll('%s', AppStrings.formatMonth(previousMonthName, lang: p.appLanguage)),
                         subtitle: Formatters.formatCurrency(prevMonthPaidAmount),
                         icon: Icons.verified_outlined,
                         iconBgColor: AppColors.successIconBg,
@@ -205,7 +206,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: '$doublePreviousMonthName Paid',
+                        title: p.tr('month_paid_title').replaceAll('%s', AppStrings.formatMonth(doublePreviousMonthName, lang: p.appLanguage)),
                         subtitle: Formatters.formatCurrency(doublePrevMonthPaidAmount),
                         icon: Icons.task_alt,
                         iconBgColor: const Color(0xFF2E7D32),
@@ -219,7 +220,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: 'Overall Paid',
+                        title: p.tr('overall_paid_title'),
                         subtitle: Formatters.formatCurrency(totalIncome),
                         icon: Icons.check_circle_outline,
                         iconBgColor: AppColors.headerGradientStart,
@@ -238,17 +239,17 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Recent Paid Fees',
+                          p.tr('recent_paid_fees'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
                       TextButton(
                         onPressed: () => onNavigate?.call(3),
-                        child: const Text('View All', style: TextStyle(color: Colors.deepPurple)),
+                        child: Text(p.tr('view_all'), style: const TextStyle(color: Colors.deepPurple)),
                       ),
                     ],
                   ),
@@ -261,8 +262,8 @@ class HomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: const Center(
-                        child: Text("No fees collected yet", style: TextStyle(color: Colors.grey)),
+                      child: Center(
+                        child: Text(p.tr('no_fees_collected_yet'), style: const TextStyle(color: Colors.grey)),
                       ),
                     )
                   else
@@ -273,10 +274,10 @@ class HomeScreen extends StatelessWidget {
                       } catch (_) {}
                       final dateStr = d != null ? '${d.day}/${d.month}/${d.year}' : 'N/A';
                       return RecentFeeCard(
-                        title: 'Student ID: ${e['studentId']}',
+                        title: p.tr('student_id_prefix').replaceAll('%s', '${e['studentId']}'),
                         dateText: dateStr,
                         amount: '${p.currencySymbol} ${e['amount']}',
-                        badgeText: 'Paid',
+                        badgeText: p.tr('status_paid'),
                         badgeColor: Colors.purple.shade50,
                         badgeTextColor: Colors.purple,
                         iconBg: const Color(0xFFF0EFFF),
@@ -286,17 +287,17 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Recent Due Fees',
+                          p.tr('recent_due_fees'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
                       TextButton(
                         onPressed: () => onNavigate?.call(3),
-                        child: const Text('View All', style: TextStyle(color: Colors.deepPurple)),
+                        child: Text(p.tr('view_all'), style: const TextStyle(color: Colors.deepPurple)),
                       ),
                     ],
                   ),
@@ -309,8 +310,8 @@ class HomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
-                      child: const Center(
-                        child: Text("No fees currently due", style: TextStyle(color: Colors.grey)),
+                      child: Center(
+                        child: Text(p.tr('no_fees_currently_due'), style: const TextStyle(color: Colors.grey)),
                       ),
                     )
                   else
@@ -321,10 +322,10 @@ class HomeScreen extends StatelessWidget {
                       } catch (_) {}
                       final dateStr = d != null ? '${d.day}/${d.month}/${d.year}' : 'N/A';
                       return RecentFeeCard(
-                        title: 'Student ID: ${e['studentId']}',
+                        title: p.tr('student_id_prefix').replaceAll('%s', '${e['studentId']}'),
                         dateText: dateStr,
                         amount: '${p.currencySymbol} ${e['amount']}',
-                        badgeText: 'Due',
+                        badgeText: p.tr('status_due'),
                         badgeColor: Colors.orange.shade50,
                         badgeTextColor: Colors.orange.shade800,
                         iconBg: const Color(0xFFFFF3E0),

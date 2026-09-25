@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../providers/app_provider.dart';
 import '../dialoges/subscription_dialog.dart';
+import '../utils/app_strings.dart';
 
 class StudentScreen extends StatefulWidget {
   const StudentScreen({super.key});
@@ -58,26 +59,26 @@ class _StudentScreenState extends State<StudentScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Text(
-          "Students",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        title: Text(
+          p.tr('students_title'),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_alt_1_outlined, color: Colors.deepPurple, size: 24),
-            tooltip: 'Add Student',
+            tooltip: p.tr('add_new_student'),
             onPressed: () => _showAddEditDialog(context),
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Sync Students',
+            tooltip: p.tr('sync_students_tooltip'),
             onPressed: () async {
               await _refreshStudents();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Students list updated"),
-                    duration: Duration(seconds: 1),
+                  SnackBar(
+                    content: Text(p.tr('students_list_updated')),
+                    duration: const Duration(seconds: 1),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
@@ -161,7 +162,7 @@ class _StudentScreenState extends State<StudentScreen> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                "Class: ${s.studentClass}",
+                                p.tr('class_prefix').replaceAll('%s', s.studentClass),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -185,7 +186,7 @@ class _StudentScreenState extends State<StudentScreen> {
                                   child: Text(
                                     s.phone.isNotEmpty
                                         ? "ID: ${s.id}  •  ${s.phone}"
-                                        : "ID: ${s.id}  •  No phone",
+                                        : "ID: ${s.id}  •  ${p.tr('no_phone')}",
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -201,7 +202,7 @@ class _StudentScreenState extends State<StudentScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    "Batch: $batchName",
+                                    p.tr('batch_prefix').replaceAll('%s', batchName),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -239,44 +240,44 @@ class _StudentScreenState extends State<StudentScreen> {
                           }
                         },
                         itemBuilder: (_) => [
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'collect',
                             child: Row(
                               children: [
-                                Icon(Icons.payments_outlined, size: 18, color: Colors.green),
-                                SizedBox(width: 8),
-                                Text("Collect Fee"),
+                                const Icon(Icons.payments_outlined, size: 18, color: Colors.green),
+                                const SizedBox(width: 8),
+                                Text(p.tr('collect_fee_title')),
                               ],
                             ),
                           ),
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'assign',
                             child: Row(
                               children: [
-                                Icon(Icons.calendar_month_outlined, size: 18, color: Colors.deepPurple),
-                                SizedBox(width: 8),
-                                Text("Assign Month"),
+                                const Icon(Icons.calendar_month_outlined, size: 18, color: Colors.deepPurple),
+                                const SizedBox(width: 8),
+                                Text(p.tr('assign_month')),
                               ],
                             ),
                           ),
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'edit',
                             child: Row(
                               children: [
-                                Icon(Icons.edit_outlined, size: 18),
-                                SizedBox(width: 8),
-                                Text("Edit Details"),
+                                const Icon(Icons.edit_outlined, size: 18),
+                                const SizedBox(width: 8),
+                                Text(p.tr('edit')),
                               ],
                             ),
                           ),
                           const PopupMenuDivider(),
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'delete',
                             child: Row(
                               children: [
-                                Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                                SizedBox(width: 8),
-                                Text("Delete Student", style: TextStyle(color: Colors.red)),
+                                const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                const SizedBox(width: 8),
+                                Text(p.tr('delete_student_title'), style: const TextStyle(color: Colors.red)),
                               ],
                             ),
                           ),
@@ -295,6 +296,7 @@ class _StudentScreenState extends State<StudentScreen> {
 
   // ---------- HEADER STATS & ACTION BUTTON ----------
   Widget _buildHeaderStats(int totalStudents, int totalBatches) {
+    final p = context.watch<AppProvider>();
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -319,10 +321,10 @@ class _StudentScreenState extends State<StudentScreen> {
           Expanded(
             child: Row(
               children: [
-                Expanded(child: _buildStatItem("Students", "$totalStudents", Icons.school)),
+                Expanded(child: _buildStatItem(p.tr('total_students_stat'), "$totalStudents", Icons.school)),
                 Container(height: 28, width: 1, color: Colors.white30),
                 const SizedBox(width: 8),
-                Expanded(child: _buildStatItem("Batches", "$totalBatches", Icons.groups)),
+                Expanded(child: _buildStatItem(p.tr('total_batches_stat'), "$totalBatches", Icons.groups)),
               ],
             ),
           ),
@@ -339,9 +341,9 @@ class _StudentScreenState extends State<StudentScreen> {
             ),
             onPressed: () => _showAddEditDialog(context),
             icon: const Icon(Icons.add, size: 16),
-            label: const Text(
-              "Add",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            label: Text(
+              p.tr('add'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ),
         ],
@@ -403,7 +405,7 @@ class _StudentScreenState extends State<StudentScreen> {
             child: TextField(
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: InputDecoration(
-                hintText: "Search student, ID, phone...",
+                hintText: p.tr('search_student_hint'),
                 prefixIcon: const Icon(Icons.search, size: 20),
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 filled: true,
@@ -430,11 +432,11 @@ class _StudentScreenState extends State<StudentScreen> {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String?>(
                 value: _selectedBatchFilter,
-                hint: const Text("Batch", style: TextStyle(fontSize: 13)),
+                hint: Text(p.appLanguage == 'bn' ? "ব্যাচ" : "Batch", style: const TextStyle(fontSize: 13)),
                 items: [
-                  const DropdownMenuItem<String?>(
+                  DropdownMenuItem<String?>(
                     value: null,
-                    child: Text("All Batches", style: TextStyle(fontSize: 13)),
+                    child: Text(p.tr('all_batches'), style: const TextStyle(fontSize: 13)),
                   ),
                   ...p.batches.map(
                         (b) => DropdownMenuItem<String?>(
@@ -454,6 +456,7 @@ class _StudentScreenState extends State<StudentScreen> {
 
   // ---------- EMPTY STATE ----------
   Widget _buildEmptyState() {
+    final p = context.watch<AppProvider>();
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -471,9 +474,9 @@ class _StudentScreenState extends State<StudentScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            "No Students Found",
-            style: TextStyle(
+          Text(
+            p.tr('no_students_found'),
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -481,7 +484,7 @@ class _StudentScreenState extends State<StudentScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            "Add a student or adjust your search filters.",
+            p.tr('no_students_subtitle'),
             style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
           ),
           const SizedBox(height: 16),
@@ -496,7 +499,7 @@ class _StudentScreenState extends State<StudentScreen> {
             ),
             onPressed: () => _showAddEditDialog(context),
             icon: const Icon(Icons.add_rounded),
-            label: const Text("Add First Student"),
+            label: Text(p.tr('add_new_student')),
           ),
         ],
       ),
@@ -662,7 +665,7 @@ class _StudentScreenState extends State<StudentScreen> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text("Student ${nameCtrl.text.trim()} added successfully"),
+                        content: Text(p.tr('student_added_success').replaceAll('%s', nameCtrl.text.trim())),
                         backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -680,7 +683,7 @@ class _StudentScreenState extends State<StudentScreen> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text("Student ${nameCtrl.text.trim()} updated"),
+                        content: Text(p.tr('student_updated_success').replaceAll('%s', nameCtrl.text.trim())),
                         backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -688,7 +691,7 @@ class _StudentScreenState extends State<StudentScreen> {
                   }
                 }
               },
-              child: Text(student == null ? "Save" : "Update"),
+              child: Text(student == null ? p.tr('save') : p.tr('update')),
             ),
           ],
         ),
@@ -703,12 +706,12 @@ class _StudentScreenState extends State<StudentScreen> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Delete Student", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text("Are you sure you want to delete this student record? This action cannot be undone."),
+        title: Text(p.tr('delete_student_title'), style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(p.tr('delete_student_msg')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(p.tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -718,8 +721,16 @@ class _StudentScreenState extends State<StudentScreen> {
             onPressed: () async {
               Navigator.pop(context);
               await p.deleteStudent(id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(p.tr('student_deleted_success')),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+            child: Text(p.tr('delete'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -729,6 +740,7 @@ class _StudentScreenState extends State<StudentScreen> {
   // ---------- ASSIGN MONTH DIALOG ----------
   void _assignMonth(BuildContext context, dynamic student) {
     final p = context.read<AppProvider>();
+    final isBn = p.appLanguage == 'bn';
     DateTime now = DateTime.now();
     int tempMonth = now.month;
     int tempYear = now.year;
@@ -742,7 +754,7 @@ class _StudentScreenState extends State<StudentScreen> {
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            "Assign Month to ${student.name}",
+            isBn ? "${student.name}-এর ফি নির্ধারণ" : "Assign Month to ${student.name}",
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           content: Container(
@@ -761,7 +773,7 @@ class _StudentScreenState extends State<StudentScreen> {
                       .map((m) => DropdownMenuItem(
                     value: m,
                     child: Text(
-                      DateFormat.MMMM().format(DateTime(0, m)),
+                      AppStrings.formatMonth(DateFormat.MMMM().format(DateTime(0, m)), lang: p.appLanguage),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ))
@@ -789,7 +801,7 @@ class _StudentScreenState extends State<StudentScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(p.tr('cancel')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -804,17 +816,24 @@ class _StudentScreenState extends State<StudentScreen> {
                   year: tempYear,
                   amount: student.monthlyFee,
                 );
+                final monthName = DateFormat.MMMM().format(DateTime(0, tempMonth));
+                final monthFormatted = AppStrings.formatMonth(monthName, lang: p.appLanguage);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      "Month assigned successfully to ${student.name}",
+                      isBn
+                          ? "${student.name}-এর জন্য $monthFormatted $tempYear এর ফি ধার্য করা হয়েছে"
+                          : "Month assigned successfully to ${student.name}",
                     ),
                     backgroundColor: Colors.green,
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               },
-              child: const Text("Assign Fee", style: TextStyle(color: Colors.white)),
+              child: Text(
+                isBn ? "ফি ধার্য করুন" : "Assign Fee",
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -825,6 +844,7 @@ class _StudentScreenState extends State<StudentScreen> {
   // ---------- COLLECT FEE DIALOG ----------
   void _collectFeeDialog(BuildContext context, dynamic student) {
     final p = context.read<AppProvider>();
+    final isBn = p.appLanguage == 'bn';
     final payments = p
         .paymentHistory(student.id)
         .where((pmt) => pmt['status'] != 'paid')
@@ -834,8 +854,8 @@ class _StudentScreenState extends State<StudentScreen> {
 
     if (payments.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No unpaid months available for this student"),
+        SnackBar(
+          content: Text(p.tr('no_unpaid_months')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -850,7 +870,7 @@ class _StudentScreenState extends State<StudentScreen> {
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            "Collect Fee for ${student.name}",
+            isBn ? "${student.name}-এর ফি গ্রহণ" : "Collect Fee for ${student.name}",
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           content: Column(
@@ -858,19 +878,20 @@ class _StudentScreenState extends State<StudentScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Monthly Fee: ${p.currencySymbol} ${student.monthlyFee.toInt()}",
+                "${p.tr('monthly_billed')} ${p.currencySymbol} ${student.monthlyFee.toInt()}",
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.green),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<DateTime>(
                 initialValue: selectedMonth,
                 decoration: InputDecoration(
-                  labelText: "Select Unpaid Month",
+                  labelText: isBn ? "বকেয়া মাস নির্বাচন করুন" : "Select Unpaid Month",
                   prefixIcon: const Icon(Icons.event_outlined),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 items: payments.map((d) {
-                  final label = DateFormat.yMMMM().format(d);
+                  final mName = DateFormat.MMMM().format(d);
+                  final label = "${AppStrings.formatMonth(mName, lang: p.appLanguage)} ${d.year}";
                   return DropdownMenuItem(value: d, child: Text(label));
                 }).toList(),
                 onChanged: (v) {
@@ -882,7 +903,7 @@ class _StudentScreenState extends State<StudentScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(p.tr('cancel')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -897,15 +918,17 @@ class _StudentScreenState extends State<StudentScreen> {
                   month: selectedMonth.month,
                   year: selectedMonth.year,
                 );
+                final monthName = DateFormat.MMMM().format(selectedMonth);
+                final monthFormatted = AppStrings.formatMonth(monthName, lang: p.appLanguage);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text("Fee collected for ${DateFormat.MMMM().format(selectedMonth)}"),
+                    content: Text(p.tr('fee_collected_success').replaceAll('%s', monthFormatted)),
                     backgroundColor: Colors.green,
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               },
-              child: const Text("Confirm Collection", style: TextStyle(color: Colors.white)),
+              child: Text(p.tr('confirm_collection'), style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),

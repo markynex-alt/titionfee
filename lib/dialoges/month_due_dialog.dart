@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/app_provider.dart';
+import '../utils/app_strings.dart';
 
 void showMonthDueStudentsDialog(
     BuildContext context, {
@@ -9,6 +13,9 @@ void showMonthDueStudentsDialog(
       required List<Map<String, dynamic>> assignedPayments,
       required List<dynamic> students,
     }) {
+  final p = Provider.of<AppProvider>(context, listen: false);
+  final isBn = p.appLanguage == 'bn';
+  final displayMonthName = AppStrings.formatMonth(monthName, lang: p.appLanguage);
   final formatter = NumberFormat("#,##,##0", "en_IN");
   final bool isTotalMode = monthName.toLowerCase() == 'total';
 
@@ -99,7 +106,7 @@ void showMonthDueStudentsDialog(
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                '$monthName Due Students',
+                isBn ? '$displayMonthName বকেয়া শিক্ষার্থী তালিকা' : '$monthName Due Students',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -111,17 +118,18 @@ void showMonthDueStudentsDialog(
         content: SizedBox(
           width: double.maxFinite,
           child: monthDues.isEmpty
-              ? const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24.0),
+              ? Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.check_circle_outline,
+                const Icon(Icons.check_circle_outline,
                     color: Colors.green, size: 40),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'No dues found!',
-                  style: TextStyle(color: Colors.black54, fontSize: 13),
+                  p.tr('no_due_students_msg'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.black54, fontSize: 13),
                 ),
               ],
             ),
@@ -197,9 +205,15 @@ void showMonthDueStudentsDialog(
                 final List<String> monthsList =
                 List<String>.from(item['months']);
                 if (monthsList.isNotEmpty) {
-                  monthText = ' (${monthsList.join(', ')})';
+                  final formattedMonths = monthsList
+                      .map((m) => AppStrings.formatMonth(m, lang: p.appLanguage))
+                      .join(', ');
+                  monthText = ' ($formattedMonths)';
                 }
               }
+
+              final classLabel = isBn ? 'শ্রেণী' : 'Class';
+              final idLabel = isBn ? 'আইডি' : 'ID';
 
               return ListTile(
                 contentPadding: const EdgeInsets.symmetric(
@@ -246,7 +260,7 @@ void showMonthDueStudentsDialog(
                   ),
                 ),
                 subtitle: Text(
-                  'Class: $studentClass | ID: $studentId$monthText',
+                  '$classLabel: $studentClass | $idLabel: $studentId$monthText',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -255,7 +269,7 @@ void showMonthDueStudentsDialog(
                   ),
                 ),
                 trailing: Text(
-                  '৳${formatter.format(amount)}',
+                  '${p.currencySymbol}${formatter.format(amount)}',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -269,7 +283,7 @@ void showMonthDueStudentsDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: Text(p.tr('close')),
           ),
         ],
       );

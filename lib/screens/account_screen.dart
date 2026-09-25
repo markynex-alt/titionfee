@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../providers/app_provider.dart';
 import '../models/student.dart';
+import '../utils/app_strings.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -135,21 +136,26 @@ class _AccountScreenState extends State<AccountScreen> {
   // ---------- CANCEL FEE DIALOG ----------
   void _cancelFeeDialog(AppProvider p, Student student, Map<String, dynamic> record) {
     final date = DateTime.parse(record['date']);
-    final monthYear = DateFormat.yMMMM().format(date);
+    final monthName = DateFormat.MMMM().format(date);
+    final monthDisplay = AppStrings.formatMonth(monthName, lang: p.appLanguage);
+    final monthYearDisplay = "$monthDisplay ${date.year}";
     final amount = (record['amount'] as num?)?.toDouble() ?? 0.0;
+    final isBn = p.appLanguage == 'bn';
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Cancel Fee Collection"),
+        title: Text(p.tr('cancel_fee_title')),
         content: Text(
-          "Are you sure you want to cancel the collected fee of ${p.currencySymbol} ${amount.toInt()} for $monthYear?\n\nThis will mark the payment as Pending Due.",
+          isBn
+              ? "আপনি কি ${p.currencySymbol} ${amount.toInt()} ফি (মাস: $monthYearDisplay) বাতিল করতে চান?\n\nএটি পুনরায় বকেয়া হিসেবে চিহ্নিত হবে।"
+              : "Are you sure you want to cancel the collected fee of ${p.currencySymbol} ${amount.toInt()} for $monthYearDisplay?\n\nThis will mark the payment as Pending Due.",
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Keep Paid"),
+            child: Text(p.tr('keep_paid')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -170,13 +176,15 @@ class _AccountScreenState extends State<AccountScreen> {
 
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text("Payment for $monthYear has been reset to Pending"),
+                  content: Text(
+                    p.tr('payment_reset_msg').replaceAll('%s', monthYearDisplay),
+                  ),
                   backgroundColor: Colors.orange,
                   behavior: SnackBarBehavior.floating,
                 ),
               );
             },
-            child: const Text("Yes, Reset to Pending"),
+            child: Text(p.tr('reset_to_pending')),
           ),
         ],
       ),
@@ -195,8 +203,8 @@ class _AccountScreenState extends State<AccountScreen> {
 
     if (assignedMonths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No unpaid months available for this student"),
+        SnackBar(
+          content: Text(p.tr('no_unpaid_months')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -205,6 +213,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
     final amountCtrl = TextEditingController(text: student.monthlyFee.toInt().toString());
     DateTime selectedMonth = assignedMonths.first;
+    final isBn = p.appLanguage == 'bn';
 
     showDialog(
       context: context,
@@ -212,7 +221,7 @@ class _AccountScreenState extends State<AccountScreen> {
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            "Collect Fee: ${student.name}",
+            isBn ? "${student.name}-এর ফি গ্রহণ" : "Collect Fee: ${student.name}",
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           content: Column(
@@ -222,12 +231,13 @@ class _AccountScreenState extends State<AccountScreen> {
               DropdownButtonFormField<DateTime>(
                 initialValue: selectedMonth,
                 decoration: InputDecoration(
-                  labelText: "Month to Collect",
+                  labelText: isBn ? "ফি আদায়ের মাস" : "Month to Collect",
                   prefixIcon: const Icon(Icons.calendar_today_outlined),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 items: assignedMonths.map((d) {
-                  final label = DateFormat.yMMMM().format(d);
+                  final mName = DateFormat.MMMM().format(d);
+                  final label = "${AppStrings.formatMonth(mName, lang: p.appLanguage)} ${d.year}";
                   return DropdownMenuItem(value: d, child: Text(label));
                 }).toList(),
                 onChanged: (v) {
@@ -241,7 +251,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 controller: amountCtrl,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: "Amount (${p.currencySymbol})",
+                  labelText: p.tr('amount_to_collect').replaceAll('%s', p.currencySymbol),
                   prefixIcon: const Icon(Icons.attach_money),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -251,7 +261,7 @@ class _AccountScreenState extends State<AccountScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(p.tr('cancel')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -263,7 +273,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 final amt = double.tryParse(amountCtrl.text.trim());
                 if (amt == null || amt <= 0) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Please enter a valid amount")),
+                    SnackBar(content: Text(isBn ? "অনুগ্রহ করে সঠিক টাকার পরিমাণ লিখুন" : "Please enter a valid amount")),
                   );
                   return;
                 }
@@ -278,17 +288,21 @@ class _AccountScreenState extends State<AccountScreen> {
                 Navigator.pop(context);
                 setState(() {});
 
+                final mName = DateFormat.MMMM().format(selectedMonth);
+                final mFormatted = AppStrings.formatMonth(mName, lang: p.appLanguage);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      "Fee collected for ${DateFormat.MMMM().format(selectedMonth)}: ${p.currencySymbol} ${amt.toInt()}",
+                      isBn
+                          ? "$mFormatted মাসের ফি আদায় সম্পন্ন: ${p.currencySymbol} ${amt.toInt()}"
+                          : "Fee collected for $mFormatted: ${p.currencySymbol} ${amt.toInt()}",
                     ),
                     backgroundColor: Colors.green,
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               },
-              child: const Text("Confirm Collection"),
+              child: Text(p.tr('confirm_collection')),
             ),
           ],
         ),
@@ -307,9 +321,9 @@ class _AccountScreenState extends State<AccountScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Text(
-          "Student Account",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        title: Text(
+          p.tr('account_title'),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         actions: [
           IconButton(
@@ -320,14 +334,14 @@ class _AccountScreenState extends State<AccountScreen> {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
                 : const Icon(Icons.refresh_rounded),
-            tooltip: 'Sync Accounts',
+            tooltip: p.tr('sync_accounts_tooltip'),
             onPressed: () async {
               await _refreshAccountData();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Account records updated"),
-                    duration: Duration(seconds: 1),
+                  SnackBar(
+                    content: Text(p.tr('account_records_updated')),
+                    duration: const Duration(seconds: 1),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
@@ -372,6 +386,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   // ---------- HEADER STATS ----------
   Widget _buildHeaderStats(double collected, double pending, String currency) {
+    final p = context.watch<AppProvider>();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -393,7 +408,7 @@ class _AccountScreenState extends State<AccountScreen> {
         children: [
           Expanded(
             child: _buildStatItem(
-              "Total Collected",
+              p.tr('total_collected'),
               "$currency ${collected.toInt()}",
               Icons.account_balance_wallet_outlined,
             ),
@@ -402,7 +417,7 @@ class _AccountScreenState extends State<AccountScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: _buildStatItem(
-              "Total Pending",
+              p.tr('total_pending'),
               "$currency ${pending.toInt()}",
               Icons.hourglass_top_outlined,
             ),
@@ -477,7 +492,7 @@ class _AccountScreenState extends State<AccountScreen> {
         onChanged: (v) => _onSearchChanged(v, p),
         onSubmitted: (v) => _onSearchSubmitted(v, p),
         decoration: InputDecoration(
-          hintText: "Enter student ID (e.g. 26001) or name...",
+          hintText: p.tr('search_account_hint'),
           hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
           prefixIcon: const Icon(Icons.search, color: Colors.deepPurple, size: 22),
           suffixIcon: _searchCtrl.text.isNotEmpty
@@ -522,7 +537,7 @@ class _AccountScreenState extends State<AccountScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           child: Text(
-            "Found ${_matchingStudents.length} matching students. Tap to open:",
+            p.tr('found_matching_students').replaceAll('%d', _matchingStudents.length.toString()),
             style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
           ),
         ),
@@ -538,7 +553,7 @@ class _AccountScreenState extends State<AccountScreen> {
               final isSelected = _selectedStudent?.id == student.id;
 
               return ChoiceChip(
-                label: Text("ID: ${student.id} - ${student.name}"),
+                label: Text("${p.appLanguage == 'bn' ? 'আইডি' : 'ID'}: ${student.id} - ${student.name}"),
                 selected: isSelected,
                 selectedColor: Colors.deepPurple,
                 backgroundColor: Colors.white,
@@ -566,6 +581,7 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget _buildStudentLedgerSection(AppProvider p, Student s) {
     final batchName = p.batchNameById(s.batchId);
     final payments = p.paymentHistory(s.id);
+    final isBn = p.appLanguage == 'bn';
 
     double studentCollected = 0;
     double studentPending = 0;
@@ -641,7 +657,7 @@ class _AccountScreenState extends State<AccountScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                "ID: ${s.id}",
+                                "${isBn ? 'আইডি' : 'ID'}: ${s.id}",
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -652,7 +668,7 @@ class _AccountScreenState extends State<AccountScreen> {
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                s.phone.isNotEmpty ? s.phone : "No phone",
+                                s.phone.isNotEmpty ? s.phone : p.tr('no_phone'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
@@ -675,9 +691,9 @@ class _AccountScreenState extends State<AccountScreen> {
                       ),
                     ),
                     icon: const Icon(Icons.payments_outlined, size: 16),
-                    label: const Text(
-                      "Collect Fee",
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    label: Text(
+                      p.tr('collect_fee_title'),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                     onPressed: () => _collectFeeDialog(p, s),
                   ),
@@ -689,11 +705,11 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               Row(
                 children: [
-                  Expanded(child: _buildSubDetailItem("Class", s.studentClass)),
+                  Expanded(child: _buildSubDetailItem(isBn ? 'শ্রেণী' : 'Class', s.studentClass)),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildSubDetailItem("Batch", batchName)),
+                  Expanded(child: _buildSubDetailItem(isBn ? 'ব্যাচ' : 'Batch', batchName)),
                   const SizedBox(width: 8),
-                  Expanded(child: _buildSubDetailItem("Monthly Fee", "${p.currencySymbol} ${s.monthlyFee.toInt()}")),
+                  Expanded(child: _buildSubDetailItem(isBn ? 'মাসিক ফি' : 'Monthly Fee', "${p.currencySymbol} ${s.monthlyFee.toInt()}")),
                 ],
               ),
               const SizedBox(height: 12),
@@ -711,7 +727,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Paid",
+                            p.tr('status_paid'),
                             style: TextStyle(fontSize: 11, color: Colors.green.shade700, fontWeight: FontWeight.w600),
                           ),
                           Text(
@@ -734,7 +750,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Pending Due ($unpaidMonthsCount mos)",
+                            isBn ? "বকেয়া ($unpaidMonthsCount মাস)" : "Pending Due ($unpaidMonthsCount mos)",
                             style: TextStyle(
                               fontSize: 11,
                               color: unpaidMonthsCount > 0 ? Colors.red.shade700 : Colors.grey.shade600,
@@ -764,12 +780,12 @@ class _AccountScreenState extends State<AccountScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                "Payment Ledger",
+                p.tr('payment_history'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                   color: Colors.black87,
@@ -780,11 +796,11 @@ class _AccountScreenState extends State<AccountScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildFilterButton('All'),
+                _buildFilterButton('All', p.tr('filter_all')),
                 const SizedBox(width: 4),
-                _buildFilterButton('Pending'),
+                _buildFilterButton('Pending', p.tr('filter_pending')),
                 const SizedBox(width: 4),
-                _buildFilterButton('Paid'),
+                _buildFilterButton('Paid', p.tr('filter_paid')),
               ],
             ),
           ],
@@ -818,7 +834,7 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  Widget _buildFilterButton(String filter) {
+  Widget _buildFilterButton(String filter, String label) {
     final isSelected = _paymentFilter == filter;
     return InkWell(
       onTap: () => setState(() => _paymentFilter = filter),
@@ -830,7 +846,7 @@ class _AccountScreenState extends State<AccountScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          filter,
+          label,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
@@ -844,6 +860,7 @@ class _AccountScreenState extends State<AccountScreen> {
   // ---------- PAYMENT LEDGER LIST ----------
   Widget _buildPaymentLedgerList(AppProvider p, Student s, List<Map<String, dynamic>> allPayments) {
     var filtered = allPayments;
+    final isBn = p.appLanguage == 'bn';
     if (_paymentFilter == 'Pending') {
       filtered = allPayments.where((e) => e['status'] != 'paid').toList();
     } else if (_paymentFilter == 'Paid') {
@@ -861,8 +878,8 @@ class _AccountScreenState extends State<AccountScreen> {
         child: Center(
           child: Text(
             _paymentFilter == 'All'
-                ? "No fee months assigned to this student yet."
-                : "No $_paymentFilter records found.",
+                ? (isBn ? "এই শিক্ষার্থীর কোনো ফি ধার্য করা হয়নি।" : "No fee months assigned to this student yet.")
+                : (isBn ? "কোনো রেকর্ড পাওয়া যায়নি।" : "No $_paymentFilter records found."),
             style: const TextStyle(color: Colors.grey, fontSize: 13),
           ),
         ),
@@ -880,7 +897,9 @@ class _AccountScreenState extends State<AccountScreen> {
           itemBuilder: (context, i) {
             final record = rowsToShow[i];
             final date = DateTime.parse(record['date']);
-            final monthYear = DateFormat.yMMMM().format(date);
+            final monthName = DateFormat.MMMM().format(date);
+            final monthDisplay = AppStrings.formatMonth(monthName, lang: p.appLanguage);
+            final monthYearDisplay = "$monthDisplay ${date.year}";
             final isPaid = record['status'] == 'paid';
             final amount = (record['amount'] as num?)?.toDouble() ?? 0.0;
 
@@ -922,7 +941,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          monthYear,
+                          monthYearDisplay,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -931,7 +950,9 @@ class _AccountScreenState extends State<AccountScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          isPaid ? "Status: Fee Cleared" : "Status: Pending Due",
+                          isPaid
+                              ? (isBn ? "অবস্থা: পরিশোধিত" : "Status: Fee Cleared")
+                              : (isBn ? "অবস্থা: বকেয়া" : "Status: Pending Due"),
                           style: TextStyle(
                             fontSize: 11,
                             color: isPaid ? Colors.green.shade700 : Colors.red.shade700,
@@ -963,14 +984,14 @@ class _AccountScreenState extends State<AccountScreen> {
                               color: Colors.red.shade50,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.undo, size: 12, color: Colors.red),
-                                SizedBox(width: 2),
+                                const Icon(Icons.undo, size: 12, color: Colors.red),
+                                const SizedBox(width: 2),
                                 Text(
-                                  "Reset",
-                                  style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold),
+                                  isBn ? "রিসেট" : "Reset",
+                                  style: const TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -986,9 +1007,9 @@ class _AccountScreenState extends State<AccountScreen> {
                               color: Colors.green.shade50,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
-                              "Pay Now",
-                              style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
+                            child: Text(
+                              isBn ? "পরিশোধ" : "Pay Now",
+                              style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
@@ -1004,8 +1025,8 @@ class _AccountScreenState extends State<AccountScreen> {
             onPressed: () => setState(() => _showAllPayments = !_showAllPayments),
             icon: Icon(_showAllPayments ? Icons.expand_less : Icons.expand_more),
             label: Text(_showAllPayments
-                ? "Show Fewer"
-                : "View All (${filtered.length}) Months"),
+                ? (isBn ? "কম দেখুন" : "Show Fewer")
+                : (isBn ? "সব দেখুন (${filtered.length} মাস)" : "View All (${filtered.length}) Months")),
           ),
       ],
     );
@@ -1013,6 +1034,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   // ---------- QUICK SELECT LIST WHEN EMPTY ----------
   Widget _buildQuickSelectSection(AppProvider p) {
+    final isBn = p.appLanguage == 'bn';
     if (p.students.isEmpty) {
       return Padding(
         padding: const EdgeInsets.only(top: 40),
@@ -1028,13 +1050,15 @@ class _AccountScreenState extends State<AccountScreen> {
                 child: Icon(Icons.person_search_rounded, size: 48, color: Colors.deepPurple.shade300),
               ),
               const SizedBox(height: 16),
-              const Text(
-                "No Students Registered",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+              Text(
+                isBn ? "কোনো শিক্ষার্থী নিবন্ধিত নেই" : "No Students Registered",
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               const SizedBox(height: 6),
               Text(
-                "Add students from the Students tab to view their account ledgers.",
+                isBn
+                    ? "শিক্ষার্থীদের লেজার দেখতে শিক্ষার্থী ট্যাব থেকে শিক্ষার্থী যোগ করুন।"
+                    : "Add students from the Students tab to view their account ledgers.",
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
               ),
@@ -1047,18 +1071,18 @@ class _AccountScreenState extends State<AccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Select Student to View Ledger",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+                p.tr('quick_select_prompt'),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               Text(
-                "Quick Select",
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                isBn ? "দ্রুত নির্বাচন" : "Quick Select",
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -1105,7 +1129,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 subtitle: Text(
-                  "ID: ${s.id}  •  Batch: $batchName",
+                  "${isBn ? 'আইডি' : 'ID'}: ${s.id}  •  ${isBn ? 'ব্যাচ' : 'Batch'}: $batchName",
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
@@ -1119,6 +1143,8 @@ class _AccountScreenState extends State<AccountScreen> {
 
   // ---------- NO STUDENT FOUND ----------
   Widget _buildNoStudentFound() {
+    final p = context.watch<AppProvider>();
+    final isBn = p.appLanguage == 'bn';
     return Padding(
       padding: const EdgeInsets.only(top: 50),
       child: Center(
@@ -1133,13 +1159,15 @@ class _AccountScreenState extends State<AccountScreen> {
               child: Icon(Icons.search_off_rounded, size: 48, color: Colors.deepPurple.shade300),
             ),
             const SizedBox(height: 16),
-            const Text(
-              "No Student Found",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+            Text(
+              p.tr('no_student_found_title'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
             const SizedBox(height: 6),
             Text(
-              "No student matches '${_searchCtrl.text.trim()}'. Please verify the student ID or name.",
+              isBn
+                  ? "'${_searchCtrl.text.trim()}' দিয়ে কোনো শিক্ষার্থী পাওয়া যায়নি। আইডি বা নাম পরীক্ষা করুন।"
+                  : "No student matches '${_searchCtrl.text.trim()}'. Please verify the student ID or name.",
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
             ),

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../providers/app_provider.dart';
 import '../models/batch.dart';
 import '../dialoges/subscription_dialog.dart';
+import '../utils/app_strings.dart';
 
 class BatchScreen extends StatefulWidget {
   const BatchScreen({super.key});
@@ -48,27 +49,27 @@ class _BatchScreenState extends State<BatchScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Text(
-          "Batches",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        title: Text(
+          p.tr('batches_title'),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         actions: [
           // Top Add Button
           IconButton(
             icon: const Icon(Icons.add_circle_outline, color: Colors.deepPurple, size: 26),
-            tooltip: 'Add Batch',
+            tooltip: p.tr('create_new_batch'),
             onPressed: _addBatchDialog,
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Sync Batches',
+            tooltip: p.tr('sync_batches_tooltip'),
             onPressed: () async {
               await _syncBatches();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Batches synced successfully"),
-                    duration: Duration(seconds: 1),
+                  SnackBar(
+                    content: Text(p.tr('batches_synced')),
+                    duration: const Duration(seconds: 1),
                   ),
                 );
               }
@@ -151,7 +152,7 @@ class _BatchScreenState extends State<BatchScreen> {
                             // Expanded to prevent 4.8px right overflow
                             Expanded(
                               child: Text(
-                                "$studentCount enrolled students",
+                                p.tr('enrolled_students').replaceAll('%d', studentCount.toString()),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -174,7 +175,7 @@ class _BatchScreenState extends State<BatchScreen> {
                               color: Colors.deepPurple,
                               size: 22,
                             ),
-                            tooltip: "Assign Month",
+                            tooltip: p.tr('assign_month'),
                             onPressed: () =>
                                 _assignMonthDialog(batch),
                           ),
@@ -194,40 +195,40 @@ class _BatchScreenState extends State<BatchScreen> {
                               }
                             },
                             itemBuilder: (_) => [
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                 value: 'assign_month',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.event_available,
+                                    const Icon(Icons.event_available,
                                         size: 18),
-                                    SizedBox(width: 8),
-                                    Text("Assign Month"),
+                                    const SizedBox(width: 8),
+                                    Text(p.tr('assign_month')),
                                   ],
                                 ),
                               ),
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                 value: 'edit',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.edit_outlined,
+                                    const Icon(Icons.edit_outlined,
                                         size: 18),
-                                    SizedBox(width: 8),
-                                    Text("Edit Name"),
+                                    const SizedBox(width: 8),
+                                    Text(p.tr('edit')),
                                   ],
                                 ),
                               ),
                               const PopupMenuDivider(),
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                 value: 'delete',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.delete_outline,
+                                    const Icon(Icons.delete_outline,
                                         size: 18,
                                         color: Colors.red),
-                                    SizedBox(width: 8),
+                                    const SizedBox(width: 8),
                                     Text(
-                                      "Delete Batch",
-                                      style: TextStyle(
+                                      p.tr('delete_batch_title'),
+                                      style: const TextStyle(
                                           color: Colors.red),
                                     ),
                                   ],
@@ -251,6 +252,7 @@ class _BatchScreenState extends State<BatchScreen> {
 
   // ---------- HEADER STATS & TOP ADD BUTTON ----------
   Widget _buildHeaderStats(int batchCount, int studentCount) {
+    final p = context.watch<AppProvider>();
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -275,10 +277,10 @@ class _BatchScreenState extends State<BatchScreen> {
           Expanded(
             child: Row(
               children: [
-                Expanded(child: _buildStatItem("Batches", "$batchCount", Icons.groups)),
+                Expanded(child: _buildStatItem(p.tr('total_batches_stat'), "$batchCount", Icons.groups)),
                 Container(height: 28, width: 1, color: Colors.white30),
                 const SizedBox(width: 8),
-                Expanded(child: _buildStatItem("Students", "$studentCount", Icons.school)),
+                Expanded(child: _buildStatItem(p.tr('total_students_stat'), "$studentCount", Icons.school)),
               ],
             ),
           ),
@@ -295,9 +297,9 @@ class _BatchScreenState extends State<BatchScreen> {
             ),
             onPressed: _addBatchDialog,
             icon: const Icon(Icons.add, size: 16),
-            label: const Text(
-              "Add",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            label: Text(
+              p.tr('add'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ),
         ],
@@ -351,6 +353,7 @@ class _BatchScreenState extends State<BatchScreen> {
 
   // ---------- EMPTY STATE ----------
   Widget _buildEmptyState() {
+    final p = context.watch<AppProvider>();
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -368,9 +371,9 @@ class _BatchScreenState extends State<BatchScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            "No Batches Available",
-            style: TextStyle(
+          Text(
+            p.tr('no_batches_title'),
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -378,7 +381,7 @@ class _BatchScreenState extends State<BatchScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            "Create a batch to start organizing your students.",
+            p.tr('no_batches_subtitle'),
             style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
           ),
           const SizedBox(height: 16),
@@ -393,7 +396,7 @@ class _BatchScreenState extends State<BatchScreen> {
             ),
             onPressed: _addBatchDialog,
             icon: const Icon(Icons.add_rounded),
-            label: const Text("Create First Batch"),
+            label: Text(p.tr('create_first_batch')),
           ),
         ],
       ),
@@ -474,14 +477,14 @@ class _BatchScreenState extends State<BatchScreen> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "Edit Batch",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          p.tr('edit_batch_title'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         content: TextField(
           controller: ctrl,
           decoration: InputDecoration(
-            labelText: "Batch Name",
+            labelText: p.tr('batch_name_label'),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             prefixIcon: const Icon(Icons.edit_outlined),
           ),
@@ -489,7 +492,7 @@ class _BatchScreenState extends State<BatchScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(p.tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -504,7 +507,7 @@ class _BatchScreenState extends State<BatchScreen> {
               await p.updateBatch(batch.id, ctrl.text.trim());
               await _syncBatches();
             },
-            child: const Text("Update", style: TextStyle(color: Colors.white)),
+            child: Text(p.tr('update'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -519,17 +522,19 @@ class _BatchScreenState extends State<BatchScreen> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          "Delete Batch",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          p.tr('delete_batch_title'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         content: Text(
-          "Are you sure you want to delete '${batch.name}'? This action cannot be undone.",
+          p.appLanguage == 'bn'
+              ? "আপনি কি নিশ্চিতভাবে '${batch.name}' ব্যাচটি মুছে ফেলতে চান? এতে থাকা শিক্ষার্থীরা ব্যাচহীন হিসেবে সংরক্ষিত থাকবে।"
+              : "Are you sure you want to delete '${batch.name}'? This action cannot be undone.",
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(p.tr('cancel')),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -542,7 +547,7 @@ class _BatchScreenState extends State<BatchScreen> {
               await p.deleteBatch(batch.id);
               await _syncBatches();
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+            child: Text(p.tr('delete'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -594,7 +599,9 @@ class _BatchScreenState extends State<BatchScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      "${students.length} Students",
+                      context.read<AppProvider>().appLanguage == 'bn'
+                          ? "${students.length} জন শিক্ষার্থী"
+                          : "${students.length} Students",
                       style: const TextStyle(
                         color: Colors.deepPurple,
                         fontWeight: FontWeight.bold,
@@ -609,7 +616,7 @@ class _BatchScreenState extends State<BatchScreen> {
                   ? Expanded(
                 child: Center(
                   child: Text(
-                    "No students assigned to this batch",
+                    context.read<AppProvider>().tr('no_students_in_batch'),
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ),
@@ -620,6 +627,7 @@ class _BatchScreenState extends State<BatchScreen> {
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (_, i) {
                     final s = students[i];
+                    final p = context.read<AppProvider>();
                     return Container(
                       decoration: BoxDecoration(
                         color: Colors.grey.shade50,
@@ -647,11 +655,11 @@ class _BatchScreenState extends State<BatchScreen> {
                           ),
                         ),
                         subtitle: Text(
-                          "Student ID: ${s.id}",
+                          p.tr('student_id_prefix').replaceAll('%s', s.id),
                           style: const TextStyle(fontSize: 12),
                         ),
                         trailing: Text(
-                          "TK ${s.monthlyFee}",
+                          "${p.currencySymbol} ${s.monthlyFee.toInt()}",
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.green,
@@ -673,6 +681,7 @@ class _BatchScreenState extends State<BatchScreen> {
   // ---------- ASSIGN MONTH ----------
   void _assignMonthDialog(Batch batch) {
     final p = context.read<AppProvider>();
+    final isBn = p.appLanguage == 'bn';
     DateTime now = DateTime.now();
     int tempMonth = now.month;
     int tempYear = now.year;
@@ -687,7 +696,7 @@ class _BatchScreenState extends State<BatchScreen> {
           shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            "Assign Month to ${batch.name}",
+            isBn ? "${batch.name} ব্যাচে ফি ধার্য করুন" : "Assign Month to ${batch.name}",
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           content: Container(
@@ -707,7 +716,7 @@ class _BatchScreenState extends State<BatchScreen> {
                         (m) => DropdownMenuItem(
                       value: m,
                       child: Text(
-                        DateFormat.MMMM().format(DateTime(0, m)),
+                        AppStrings.formatMonth(DateFormat.MMMM().format(DateTime(0, m)), lang: p.appLanguage),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -738,7 +747,7 @@ class _BatchScreenState extends State<BatchScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(p.tr('cancel')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -753,17 +762,23 @@ class _BatchScreenState extends State<BatchScreen> {
                   month: tempMonth,
                   year: tempYear,
                 );
+                final monthName = DateFormat.MMMM().format(DateTime(0, tempMonth));
+                final monthFormatted = AppStrings.formatMonth(monthName, lang: p.appLanguage);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      "Month (${DateFormat.MMMM().format(DateTime(0, tempMonth))} $tempYear) assigned to ${batch.name}",
+                      isBn
+                          ? "${batch.name} ব্যাচে $monthFormatted $tempYear এর ফি ধার্য করা হয়েছে"
+                          : "Month ($monthFormatted $tempYear) assigned to ${batch.name}",
                     ),
                     backgroundColor: Colors.green,
                   ),
                 );
               },
-              child: const Text("Assign Fee",
-                  style: TextStyle(color: Colors.white)),
+              child: Text(
+                isBn ? "ফি ধার্য করুন" : "Assign Fee",
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
