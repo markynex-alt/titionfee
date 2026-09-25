@@ -3,6 +3,13 @@ allprojects {
         google()
         mavenCentral()
     }
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.browser:browser:1.8.0")
+            force("androidx.core:core:1.15.0")
+            force("androidx.core:core-ktx:1.15.0")
+        }
+    }
 }
 
 val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
@@ -14,6 +21,15 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+}
+subprojects {
+    project.configurations.all {
+        resolutionStrategy {
+            force("androidx.browser:browser:1.8.0")
+            force("androidx.core:core:1.15.0")
+            force("androidx.core:core-ktx:1.15.0")
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {

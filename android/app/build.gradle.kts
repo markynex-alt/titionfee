@@ -24,13 +24,18 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
-            storePassword = keystoreProperties["storePassword"] as String
+            val alias = keystoreProperties.getProperty("keyAlias")
+            val keyPass = keystoreProperties.getProperty("keyPassword")
+            val storePass = keystoreProperties.getProperty("storePassword")
+            val storePath = keystoreProperties.getProperty("storeFile")
+            if (alias != null && keyPass != null && storePass != null && storePath != null) {
+                keyAlias = alias
+                keyPassword = keyPass
+                storeFile = file(storePath)
+                storePassword = storePass
+            }
         }
     }
-
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -51,10 +56,21 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("release")
+            val releaseConfig = signingConfigs.getByName("release")
+            if (releaseConfig.storeFile != null && releaseConfig.storeFile!!.exists()) {
+                signingConfig = releaseConfig
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("androidx.browser:browser:1.8.0")
+        force("androidx.core:core:1.15.0")
+        force("androidx.core:core-ktx:1.15.0")
     }
 }
 
