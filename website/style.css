@@ -1,0 +1,15 @@
+/*
+Theme Name: Tuition Fee eCommerce & Plans
+Theme URI: https://tuitionfee.app
+Author: Tuition Fee Team
+Author URI: https://tuitionfee.app
+Description: Modern, responsive, clean WordPress & eCommerce theme for Tuition Fee Manager subscription plans, multi-month durations, and activation key delivery.
+Version: 1.1.0
+License: GNU General Public License v2 or later
+Text Domain: tuition-fee
+*/
+
+/* Core styles are loaded via Tailwind and Google Fonts */
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tuition Fee Manager - Official Store & Subscription Plans</title>
+  <!-- Google Fonts & Tailwind CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            accent: '#f59e0b',
+            bkash: '#e2136e',
+            nagad: '#f7941d'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(229, 231, 235, 0.8);
+    }
+    .gradient-bg {
+      background: radial-gradient(circle at top right, #e0e7ff 0%, #f8fafc 50%, #f1f5f9 100%);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- ================= TOP NAVIGATION ================= -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          </svg>
+        </div>
+        <div>
+          <span class="text-xl font-extrabold tracking-tight text-slate-900">TuitionFee</span>
+          <span class="text-xs ml-1.5 px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 font-bold border border-brand-100">PRO v1.1.0</span>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-600">
+        <a href="#features" class="hover:text-brand-600 transition">Features</a>
+        <a href="#pricing" class="hover:text-brand-600 transition">Subscription Plans</a>
+        <a href="#how-it-works" class="hover:text-brand-600 transition">Activation Guide</a>
+        <a href="#faq" class="hover:text-brand-600 transition">FAQ</a>
+      </nav>
+
+      <div class="flex items-center space-x-3">
+        <button onclick="openAdminModal()" class="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center space-x-1.5">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+          </svg>
+          <span>Edit Plans (Admin)</span>
+        </button>
+        <a href="#pricing" class="px-5 py-2.5 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-lg shadow-brand-500/25 transition">
+          Get Started
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= HERO SECTION ================= -->
+  <section class="gradient-bg py-20 lg:py-28 relative overflow-hidden border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+      <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-6">
+        <span>🎉 Free Tier: Up to 5 Batches & 10 Students Free</span>
+      </div>
+      <h1 class="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-tight max-w-4xl mx-auto">
+        Empower Your Tuition & Coaching Business with <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-indigo-600">Smart Plans</span>
+      </h1>
+      <p class="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+        Offline-first mobile accounting for private tutors and coaching centers. Choose flexible monthly subscriptions payable with bKash, Nagad, or Cards.
+      </p>
+
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="#pricing" class="px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl shadow-xl shadow-brand-500/30 transition transform hover:-translate-y-0.5 text-base">
+          Browse Plans & Pricing
+        </a>
+        <a href="#how-it-works" class="px-8 py-4 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-2xl border border-slate-200 shadow-sm transition text-base">
+          How to Activate in App
+        </a>
+      </div>
+
+      <!-- Trust Badges -->
+      <div class="mt-12 pt-8 border-t border-slate-200/60 max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-slate-500 text-xs font-semibold">
+        <div class="flex items-center justify-center space-x-2">
+          <span class="text-emerald-500 font-bold">✓</span> <span>Instant Offline Speed</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <span class="text-emerald-500 font-bold">✓</span> <span>Firebase Cloud Sync</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <span class="text-emerald-500 font-bold">✓</span> <span>bKash & Nagad Accepted</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <span class="text-emerald-500 font-bold">✓</span> <span>Multi-Month Discounts</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PRICING & SUBSCRIPTION SECTION ================= -->
+  <section id="pricing" class="py-20 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <h2 class="text-xs font-extrabold uppercase tracking-widest text-brand-600 mb-3">Affordable Subscriptions</h2>
+        <h3 class="text-3xl sm:text-4xl font-black text-slate-900">Simple, Transparent Pricing in Taka</h3>
+        <p class="mt-4 text-base text-slate-600">
+          Start free with up to 5 batches & 10 students. Scale effortlessly as your student batches grow.
+        </p>
+
+        <!-- Duration Selector / Multi-Month Multiplier -->
+        <div class="mt-8 inline-flex items-center p-1.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+          <button type="button" onclick="selectDuration(1)" id="btn-month-1" class="duration-btn px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-600 text-white shadow-sm transition">
+            1 Month
+          </button>
+          <button type="button" onclick="selectDuration(3)" id="btn-month-3" class="duration-btn px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 transition">
+            3 Months <span class="ml-1 text-xs text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">Save 5%</span>
+          </button>
+          <button type="button" onclick="selectDuration(6)" id="btn-month-6" class="duration-btn px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 transition">
+            6 Months <span class="ml-1 text-xs text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">Save 10%</span>
+          </button>
+          <button type="button" onclick="selectDuration(12)" id="btn-month-12" class="duration-btn px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 transition">
+            12 Months <span class="ml-1 text-xs text-brand-600 font-bold bg-brand-50 px-1.5 py-0.5 rounded">Save 20%</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Pricing Cards Grid -->
+      <div id="pricing-cards" class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+
+      <!-- Free Tier Note -->
+      <div class="mt-12 bg-white rounded-2xl p-6 border border-slate-200 text-center max-w-2xl mx-auto shadow-sm">
+        <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold mb-2">Always Free</span>
+        <h4 class="text-base font-bold text-slate-800">Need 5 batches and 10 students or less?</h4>
+        <p class="text-sm text-slate-600 mt-1">
+          No purchase required! Download the Tuition Fee Manager app from the Play Store and start managing immediately at 0 Taka cost.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= HOW IT WORKS / ACTIVATION GUIDE ================= -->
+  <section id="how-it-works" class="py-20 bg-white border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <h2 class="text-xs font-extrabold uppercase tracking-widest text-brand-600 mb-3">Quick & Effortless</h2>
+        <h3 class="text-3xl font-black text-slate-900">How to Unlock Your Plan in the App</h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center relative">
+          <div class="w-12 h-12 bg-brand-600 text-white font-black text-lg rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md shadow-brand-500/20">
+            1
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Select & Pay</h4>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Pick your desired plan and month duration above. Pay securely via bKash, Nagad, or Card.
+          </p>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center relative">
+          <div class="w-12 h-12 bg-brand-600 text-white font-black text-lg rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md shadow-brand-500/20">
+            2
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Get Activation Code</h4>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Immediately receive your verified License Key (e.g., <code class="bg-indigo-50 text-indigo-700 px-1 py-0.5 rounded font-mono text-xs">TF-STANDARD-3M-XXXX</code>).
+          </p>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center relative">
+          <div class="w-12 h-12 bg-brand-600 text-white font-black text-lg rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md shadow-brand-500/20">
+            3
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Paste in App Settings</h4>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Open App Settings -> Subscription & Plans -> Enter Code and click Activate. Enjoy unlimited capacity instantly!
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CHECKOUT MODAL ================= -->
+  <div id="checkout-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-card bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative my-8">
+      <button onclick="closeCheckoutModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <div id="checkout-form-view">
+        <div class="flex items-center space-x-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-extrabold text-slate-900">Confirm Order</h3>
+            <p class="text-xs text-slate-500">Instant digital license code delivery</p>
+          </div>
+        </div>
+
+        <!-- Selected Plan Summary Card -->
+        <div class="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4 mb-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <span id="modal-plan-name" class="font-bold text-slate-900 text-base">Standard Plan</span>
+              <span id="modal-plan-duration" class="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">3 Months</span>
+            </div>
+            <div class="text-right">
+              <span id="modal-plan-price" class="text-xl font-black text-brand-600">৳142</span>
+            </div>
+          </div>
+          <div id="modal-plan-limits" class="mt-2 text-xs text-slate-600">
+            Up to 10 Batches • Up to 20 Students
+          </div>
+        </div>
+
+        <form onsubmit="handleOrderSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Full Name</label>
+            <input type="text" id="cust-name" required placeholder="e.g. Master Anisur Rahman" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Mobile (WhatsApp/bKash)</label>
+              <input type="tel" id="cust-phone" required placeholder="017XXXXXXXX" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email Address</label>
+              <input type="email" id="cust-email" required placeholder="tutor@gmail.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Payment Method Radios -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Select Payment Method</label>
+            <div class="grid grid-cols-3 gap-3">
+              <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-bkash transition has-[:checked]:border-bkash has-[:checked]:bg-pink-50/40">
+                <input type="radio" name="payment_method" value="bkash" checked class="hidden">
+                <span class="text-xs font-extrabold text-[#e2136e]">bKash</span>
+                <span class="text-[10px] text-slate-400">Mobile Wallet</span>
+              </label>
+              <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-nagad transition has-[:checked]:border-nagad has-[:checked]:bg-amber-50/40">
+                <input type="radio" name="payment_method" value="nagad" class="hidden">
+                <span class="text-xs font-extrabold text-[#f7941d]">Nagad</span>
+                <span class="text-[10px] text-slate-400">Instant</span>
+              </label>
+              <label class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-indigo-600 transition has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-50/40">
+                <input type="radio" name="payment_method" value="card" class="hidden">
+                <span class="text-xs font-extrabold text-indigo-700">Bank Card</span>
+                <span class="text-[10px] text-slate-400">Visa / Master</span>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-500/25 transition mt-2 text-sm">
+            Complete Payment & Generate License
+          </button>
+        </form>
+      </div>
+
+      <!-- Success Confirmation View -->
+      <div id="checkout-success-view" class="hidden text-center py-4">
+        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        <h3 class="text-2xl font-black text-slate-900">Payment Successful!</h3>
+        <p class="text-sm text-slate-600 mt-1">Your subscription is confirmed. Below is your official app activation code:</p>
+
+        <div class="my-6 p-4 rounded-2xl bg-indigo-50 border border-indigo-200">
+          <div class="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">App Activation Code</div>
+          <div id="generated-license-code" class="text-2xl font-mono font-black text-indigo-900 tracking-wider">TF-STANDARD-3M-A91B</div>
+          <button onclick="copyLicenseCode()" class="mt-2 text-xs font-bold text-brand-600 hover:text-brand-700 underline inline-flex items-center space-x-1">
+            <span>Copy Code to Clipboard</span>
+          </button>
+        </div>
+
+        <div class="text-left bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1 mb-6">
+          <p><strong>Order ID:</strong> <span id="success-order-id">ORD-92817</span></p>
+          <p><strong>Plan:</strong> <span id="success-plan-info">Standard Plan (3 Months)</span></p>
+          <p><strong>Validity:</strong> Active for 90 Days</p>
+        </div>
+
+        <button onclick="closeCheckoutModal()" class="w-full py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-sm transition">
+          Done & Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN PLAN EDITOR MODAL ================= -->
+  <div id="admin-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-card bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl relative my-8">
+      <button onclick="closeAdminModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        </div>
+        <div>
+          <h3 class="text-xl font-extrabold text-slate-900">Admin: Edit Subscription Plans</h3>
+          <p class="text-xs text-slate-500">Edit batch limits, student limits & prices in Taka directly</p>
+        </div>
+      </div>
+
+      <div id="admin-plans-list" class="space-y-6">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="mt-8 flex justify-between items-center pt-6 border-t border-slate-200">
+        <button onclick="resetDefaultPlans()" class="text-xs font-bold text-red-600 hover:underline">
+          Reset to Defaults
+        </button>
+        <div class="space-x-3">
+          <button onclick="closeAdminModal()" class="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+            Cancel
+          </button>
+          <button onclick="saveAdminPlans()" class="px-6 py-2.5 text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-md transition">
+            Save All Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="mt-auto bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-sm">
+          TF
+        </div>
+        <span class="text-white font-bold text-sm">Tuition Fee Manager & eCommerce</span>
+      </div>
+      <p class="text-xs text-slate-500">
+        © 2026 Tuition Fee App. All rights reserved. Built with Flutter, Hive, Firebase & Modern Web.
+      </p>
+    </div>
+  </footer>
+
+  <!-- ================= LOGIC SCRIPT ================= -->
+  <script>
+    // Initial Plan Configuration (Editable from Admin)
+    const DEFAULT_PLANS = [
+      {
+        id: 'starter',
+        name: 'Starter Plan',
+        badge: 'Basic Tier',
+        monthlyPrice: 30, // 30 Taka
+        batches: 5,
+        students: 10,
+        description: 'For private tutors with up to 5 batches and 10 students.',
+        features: [
+          '5 Batches included',
+          '10 Students capacity',
+          'Fast offline ledger calculation',
+          'Firebase cloud backup'
+        ],
+        highlight: false
+      },
+      {
+        id: 'standard',
+        name: 'Standard Plan',
+        badge: 'Most Popular',
+        monthlyPrice: 50, // 50 Taka
+        batches: 10,
+        students: 20,
+        description: 'Popular choice for full-time tutors and small coaching groups.',
+        features: [
+          'Up to 10 Batches',
+          'Up to 20 Students',
+          'Priority multi-month sync',
+          'Instant ledger search & reports'
+        ],
+        highlight: true
+      },
+      {
+        id: 'unlimited',
+        name: 'Unlimited Pro',
+        badge: 'Best Value',
+        monthlyPrice: 200, // 200 Taka
+        batches: -1, // Unlimited
+        students: -1, // Unlimited
+        description: 'No limits! Perfect for large coaching centers and academic institutions.',
+        features: [
+          'Unlimited Batches',
+          'Unlimited Students',
+          'Full cloud synchronization',
+          'Priority 24/7 technical support'
+        ],
+        highlight: false
+      }
+    ];
+
+    let currentPlans = [];
+    let selectedDurationMonths = 1;
+    let activeCheckoutPlan = null;
+
+    function loadPlans() {
+      const stored = localStorage.getItem('tf_plans');
+      if (stored) {
+        try {
+          currentPlans = JSON.parse(stored);
+        } catch (_) {
+          currentPlans = JSON.parse(JSON.stringify(DEFAULT_PLANS));
+        }
+      } else {
+        currentPlans = JSON.parse(JSON.stringify(DEFAULT_PLANS));
+      }
+      renderPricingCards();
+    }
+
+    function selectDuration(months) {
+      selectedDurationMonths = months;
+      document.querySelectorAll('.duration-btn').forEach(btn => {
+        btn.classList.remove('bg-brand-600', 'text-white', 'shadow-sm');
+        btn.classList.add('text-slate-600');
+      });
+      const activeBtn = document.getElementById(`btn-month-${months}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow-sm');
+        activeBtn.classList.remove('text-slate-600');
+      }
+      renderPricingCards();
+    }
+
+    function calculateTotal(monthlyPrice, months) {
+      let discount = 0;
+      if (months === 3) discount = 0.05;
+      else if (months === 6) discount = 0.10;
+      else if (months === 12) discount = 0.20;
+
+      const raw = monthlyPrice * months;
+      return Math.round(raw * (1 - discount));
+    }
+
+    function renderPricingCards() {
+      const container = document.getElementById('pricing-cards');
+      container.innerHTML = '';
+
+      currentPlans.forEach(plan => {
+        const totalPrice = calculateTotal(plan.monthlyPrice, selectedDurationMonths);
+        const perMonthEquiv = Math.round(totalPrice / selectedDurationMonths);
+
+        const card = document.createElement('div');
+        card.className = `rounded-3xl p-8 transition duration-200 flex flex-col justify-between ${
+          plan.highlight
+            ? 'glass-card ring-2 ring-brand-500 shadow-xl shadow-brand-500/10 relative bg-white'
+            : 'bg-white border border-slate-200 shadow-sm hover:shadow-md'
+        }`;
+
+        card.innerHTML = `
+          <div>
+            ${plan.highlight ? `
+              <div class="inline-block px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-extrabold uppercase tracking-wider mb-4 border border-brand-100">
+                ${plan.badge}
+              </div>
+            ` : `
+              <div class="inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold mb-4">
+                ${plan.badge}
+              </div>
+            `}
+            <h3 class="text-2xl font-black text-slate-900">${plan.name}</h3>
+            <p class="text-xs text-slate-500 mt-1 min-h-[32px]">${plan.description}</p>
+
+            <div class="mt-6 flex items-baseline">
+              <span class="text-4xl font-black text-slate-900">৳${totalPrice}</span>
+              <span class="text-xs font-semibold text-slate-500 ml-1.5">/ for ${selectedDurationMonths} ${selectedDurationMonths === 1 ? 'month' : 'months'}</span>
+            </div>
+            ${selectedDurationMonths > 1 ? `
+              <p class="text-xs font-medium text-emerald-600 mt-1">Approx. ৳${perMonthEquiv}/month</p>
+            ` : ''}
+
+            <!-- Plan Limits -->
+            <div class="mt-6 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1.5 font-semibold text-slate-700">
+              <div class="flex justify-between">
+                <span>Batch Limit:</span>
+                <span class="font-bold text-slate-900">${plan.batches === -1 ? 'Unlimited' : plan.batches + ' Batches'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Student Capacity:</span>
+                <span class="font-bold text-slate-900">${plan.students === -1 ? 'Unlimited' : plan.students + ' Students'}</span>
+              </div>
+            </div>
+
+            <!-- Features List -->
+            <ul class="mt-6 space-y-2.5 text-xs text-slate-600">
+              ${plan.features.map(f => `
+                <li class="flex items-center space-x-2">
+                  <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                  <span>${f}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+
+          <div class="mt-8 pt-4">
+            <button onclick="openCheckout('${plan.id}')" class="w-full py-3.5 rounded-xl font-bold text-sm transition ${
+              plan.highlight
+                ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-lg shadow-brand-500/25'
+                : 'bg-slate-900 hover:bg-black text-white'
+            }">
+              Purchase License
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Checkout Flow
+    function openCheckout(planId) {
+      activeCheckoutPlan = currentPlans.find(p => p.id === planId);
+      if (!activeCheckoutPlan) return;
+
+      const totalPrice = calculateTotal(activeCheckoutPlan.monthlyPrice, selectedDurationMonths);
+
+      document.getElementById('modal-plan-name').innerText = activeCheckoutPlan.name;
+      document.getElementById('modal-plan-duration').innerText = `${selectedDurationMonths} Month${selectedDurationMonths > 1 ? 's' : ''}`;
+      document.getElementById('modal-plan-price').innerText = `৳${totalPrice}`;
+      document.getElementById('modal-plan-limits').innerText = `Batches: ${activeCheckoutPlan.batches === -1 ? 'Unlimited' : activeCheckoutPlan.batches} • Students: ${activeCheckoutPlan.students === -1 ? 'Unlimited' : activeCheckoutPlan.students}`;
+
+      document.getElementById('checkout-form-view').classList.remove('hidden');
+      document.getElementById('checkout-success-view').classList.add('hidden');
+      document.getElementById('checkout-modal').classList.remove('hidden');
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkout-modal').classList.add('hidden');
+    }
+
+    function handleOrderSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('cust-name').value;
+      const phone = document.getElementById('cust-phone').value;
+      const email = document.getElementById('cust-email').value;
+
+      // Generate a functional activation key compatible with Tuition Fee App:
+      // Format: TF-[TIER]-[MONTHS]M-[RANDOM_HASH]
+      const tierCode = activeCheckoutPlan.id.toUpperCase();
+      const randPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const licenseKey = `TF-${tierCode}-${selectedDurationMonths}M-${randPart}`;
+      const orderId = `TF-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      document.getElementById('generated-license-code').innerText = licenseKey;
+      document.getElementById('success-order-id').innerText = orderId;
+      document.getElementById('success-plan-info').innerText = `${activeCheckoutPlan.name} (${selectedDurationMonths} Month${selectedDurationMonths > 1 ? 's' : ''})`;
+
+      // Save order to history
+      const orders = JSON.parse(localStorage.getItem('tf_orders') || '[]');
+      orders.unshift({
+        orderId,
+        licenseKey,
+        planId: activeCheckoutPlan.id,
+        months: selectedDurationMonths,
+        price: calculateTotal(activeCheckoutPlan.monthlyPrice, selectedDurationMonths),
+        customer: { name, phone, email },
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem('tf_orders', JSON.stringify(orders));
+
+      document.getElementById('checkout-form-view').classList.add('hidden');
+      document.getElementById('checkout-success-view').classList.remove('hidden');
+    }
+
+    function copyLicenseCode() {
+      const code = document.getElementById('generated-license-code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        alert("Activation code copied! Open Tuition Fee App -> Settings -> Subscription & Plans -> Enter Code to activate.");
+      });
+    }
+
+    // Admin Plan Editor
+    function openAdminModal() {
+      const container = document.getElementById('admin-plans-list');
+      container.innerHTML = '';
+
+      currentPlans.forEach((plan, idx) => {
+        const item = document.createElement('div');
+        item.className = 'p-4 rounded-2xl bg-slate-50 border border-slate-200';
+        item.innerHTML = `
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-sm font-bold text-slate-800">${plan.name} (${plan.id})</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-semibold">Tier #${idx + 1}</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Price per Month (৳)</label>
+              <input type="number" id="edit-price-${plan.id}" value="${plan.monthlyPrice}" class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Max Batches (-1 for Unltd)</label>
+              <input type="number" id="edit-batches-${plan.id}" value="${plan.batches}" class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Max Students (-1 for Unltd)</label>
+              <input type="number" id="edit-students-${plan.id}" value="${plan.students}" class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-sm">
+            </div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+
+      document.getElementById('admin-modal').classList.remove('hidden');
+    }
+
+    function closeAdminModal() {
+      document.getElementById('admin-modal').classList.add('hidden');
+    }
+
+    function saveAdminPlans() {
+      currentPlans.forEach(plan => {
+        const priceInput = document.getElementById(`edit-price-${plan.id}`);
+        const batchInput = document.getElementById(`edit-batches-${plan.id}`);
+        const studentInput = document.getElementById(`edit-students-${plan.id}`);
+
+        if (priceInput) plan.monthlyPrice = parseFloat(priceInput.value) || 0;
+        if (batchInput) plan.batches = parseInt(batchInput.value);
+        if (studentInput) plan.students = parseInt(studentInput.value);
+      });
+
+      localStorage.setItem('tf_plans', JSON.stringify(currentPlans));
+      renderPricingCards();
+      closeAdminModal();
+      alert("Plans updated successfully! The new prices and limits are now active on the store.");
+    }
+
+    function resetDefaultPlans() {
+      if (confirm("Reset plans back to default (30 Tk, 50 Tk, 200 Tk)?")) {
+        currentPlans = JSON.parse(JSON.stringify(DEFAULT_PLANS));
+        localStorage.removeItem('tf_plans');
+        renderPricingCards();
+        closeAdminModal();
+      }
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', loadPlans);
+  </script>
+</body>
+</html>
