@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/batch.dart';
 import '../models/student.dart';
 import '../models/subscription_plan.dart';
+import '../services/license_service.dart';
 import '../utils/app_strings.dart';
 
 class AppProvider extends ChangeNotifier {
@@ -119,77 +120,60 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> activatePlanWithCode(String code) async {
+  Future<LicenseResult> verifyAndActivateLicense(String code) async {
     final clean = code.trim().toUpperCase();
-    if (clean.isEmpty) return false;
-
-    String tier = 'standard';
-    int months = 1;
-
-    if (clean.contains('UNLIMITED') || clean.contains('PRO')) {
-      tier = 'unlimited';
-    } else if (clean.contains('STANDARD')) {
-      tier = 'standard';
-    } else if (clean.contains('STARTER')) {
-      tier = 'starter';
-    } else if (clean.startsWith('TF-')) {
-      tier = 'unlimited';
-    } else if (clean.length >= 6) {
-      // bKash or Nagad transaction code, TrxID, or payment voucher
-      tier = 'standard';
-      months = 1;
-    } else {
-      return false;
+    if (clean.isEmpty) {
+      return const LicenseResult(
+        isValid: false,
+        message: 'অনুগ্রহ করে অ্যাক্টিভেশন কোড বা TrxID দিন।',
+      );
     }
-
-    final monthMatch = RegExp(r'-(\d+)M').firstMatch(clean);
-    if (monthMatch != null) {
-      months = int.tryParse(monthMatch.group(1) ?? '1') ?? 1;
-    }
-
-    final now = DateTime.now();
-    // Increase validity: if current plan is already valid in future, extend from that date!
-    final existingExpiry = planExpiryDate;
-    final baseDate = (existingExpiry != null && existingExpiry.isAfter(now))
-        ? existingExpiry
-        : now;
-    final expiry = DateTime(baseDate.year, baseDate.month + months, baseDate.day);
-
-    await settingsBox.put('plan_id', tier);
-    await settingsBox.put('plan_expiry', expiry.toIso8601String());
-    await settingsBox.put('activation_code', clean);
-    await settingsBox.put('payment_number', ownerBkashNagadNumber);
-
-    notifyListeners();
 
     final user = _auth.currentUser;
-    if (user != null && user.email != null) {
-      try {
-        await _firestore.collection('subscriptions').doc(user.email).set({
-          'plan_id': tier,
-          'plan_expiry': expiry.toIso8601String(),
-          'activation_code': clean,
-          'payment_number': ownerBkashNagadNumber,
-          'org_name': organizationName,
-          'contact_phone': contactPhone,
-          'updated_at': now.toIso8601String(),
-        }, SetOptions(merge: true));
+    final result = await LicenseService.verifyCode(
+      code: clean,
+      userEmail: user?.email ?? '',
+      orgName: organizationName,
+      phone: contactPhone,
+    );
 
-        // Log payment verification request for tracking
-        await _firestore.collection('payment_verifications').add({
-          'email': user.email,
-          'org_name': organizationName,
-          'contact_phone': contactPhone,
-          'code_or_trx': clean,
-          'plan_id': tier,
-          'months': months,
-          'payment_number': ownerBkashNagadNumber,
-          'created_at': FieldValue.serverTimestamp(),
-        });
-      } catch (_) {}
+    if (result.isValid) {
+      final now = DateTime.now();
+      // Increase validity: if current plan is already valid in future, extend from that date!
+      final existingExpiry = planExpiryDate;
+      final baseDate = (existingExpiry != null && existingExpiry.isAfter(now))
+          ? existingExpiry
+          : now;
+      final expiry = DateTime(baseDate.year, baseDate.month + result.months, baseDate.day);
+
+      await settingsBox.put('plan_id', result.tier);
+      await settingsBox.put('plan_expiry', expiry.toIso8601String());
+      await settingsBox.put('activation_code', clean);
+      await settingsBox.put('payment_number', ownerBkashNagadNumber);
+
+      notifyListeners();
+
+      if (user != null && user.email != null) {
+        try {
+          await _firestore.collection('subscriptions').doc(user.email).set({
+            'plan_id': result.tier,
+            'plan_expiry': expiry.toIso8601String(),
+            'activation_code': clean,
+            'payment_number': ownerBkashNagadNumber,
+            'org_name': organizationName,
+            'contact_phone': contactPhone,
+            'updated_at': now.toIso8601String(),
+          }, SetOptions(merge: true));
+        } catch (_) {}
+      }
     }
 
-    return true;
+    return result;
+  }
+
+  Future<bool> activatePlanWithCode(String code) async {
+    final res = await verifyAndActivateLicense(code);
+    return res.isValid;
   }
 
   // Settings

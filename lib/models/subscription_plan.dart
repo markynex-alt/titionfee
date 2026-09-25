@@ -27,6 +27,10 @@ class SubscriptionPlan {
   bool get isUnlimitedStudents => studentLimit == -1;
   bool get isFree => priceMonthly == 0;
 
+  String name(String lang) => lang == 'bn' ? nameBn : nameEn;
+  String description(String lang) => lang == 'bn' ? descriptionBn : descriptionEn;
+  List<String> features(String lang) => lang == 'bn' ? featuresBn : featuresEn;
+
   double calculatePrice(int months) {
     if (isFree) return 0;
     return priceMonthly * months;

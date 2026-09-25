@@ -62,26 +62,29 @@ class HomeStickyHeader extends SliverPersistentHeaderDelegate {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        name,
+                        p.organizationName.isNotEmpty
+                            ? p.organizationName
+                            : (isBn ? 'টিউশন ফি ম্যানেজার' : 'Tuition Fee Manager'),
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 17,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
                         isBn
-                            ? 'স্বাগতম, $firstName 👋\nআপনার দিনটি শুভ হোক!'
-                            : 'Hello, $firstName 👋\nHave a great day ahead!',
+                            ? 'স্বাগতম, $firstName 👋 | আপনার দিনটি শুভ হোক!'
+                            : 'Hello, $firstName 👋 | Have a great day ahead!',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 11,
                           height: 1.2,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
