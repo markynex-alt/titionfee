@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:tuition_fee/providers/app_provider.dart';
 import 'package:tuition_fee/utils/app_colors.dart';
 import 'package:tuition_fee/utils/formatters.dart';
+import 'package:tuition_fee/utils/app_strings.dart';
 import 'package:tuition_fee/dialoges/month_due_dialog.dart';
 import 'package:tuition_fee/views/dialogs/paid_students_dialog.dart';
 import 'package:tuition_fee/views/home/widgets/grid_tile_card.dart';
@@ -21,39 +22,10 @@ class HomeScreen extends StatelessWidget {
     final p = context.watch<AppProvider>();
     final now = DateTime.now();
 
-    final payments = p.paymentBox.values
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
-
     final activeStudentIds = p.students
-        .map((s) => s.id?.toString())
-        .where((id) => id != null && id.isNotEmpty)
+        .map((s) => s.id)
+        .where((id) => id.isNotEmpty)
         .toSet();
-
-    final paid = payments.where((e) {
-      final isPaid = e['status'] == 'paid';
-      final studentId = e['studentId']?.toString() ?? '';
-      return isPaid && activeStudentIds.contains(studentId);
-    }).toList();
-
-    final assigned = payments.where((e) {
-      final isAssigned = e['status'] == 'assigned';
-      final studentId = e['studentId']?.toString() ?? '';
-      return isAssigned && activeStudentIds.contains(studentId);
-    }).toList();
-
-    double sum(List<Map<String, dynamic>> list) =>
-        list.fold(0.0, (s, e) => s + (e['amount'] ?? 0));
-
-    double currentMonthSum(List<Map<String, dynamic>> list) => list
-        .where((e) {
-      final d = DateTime.parse(e['date']);
-      return d.month == now.month && d.year == now.year;
-    })
-        .fold(0.0, (s, e) => s + (e['amount'] ?? 0));
-
-    final totalDue = sum(assigned);
-    final totalIncome = sum(paid);
 
     final previousMonthDate = DateTime(now.year, now.month - 1, 1);
     final doublePreviousMonthDate = DateTime(now.year, now.month - 2, 1);
@@ -61,19 +33,69 @@ class HomeScreen extends StatelessWidget {
     final previousMonthName = DateFormat('MMM').format(previousMonthDate);
     final doublePreviousMonthName = DateFormat('MMM').format(doublePreviousMonthDate);
 
-    double getMonthDue(List<Map<String, dynamic>> list, DateTime date) => list
-        .where((e) {
-      final d = DateTime.parse(e['date']);
-      return d.month == date.month && d.year == date.year;
-    })
-        .fold(0.0, (s, e) => s + (e['amount'] ?? 0));
+    final paid = <Map<String, dynamic>>[];
+    final assigned = <Map<String, dynamic>>[];
 
-    final prevMonthDueAmount = getMonthDue(assigned, previousMonthDate);
-    final doublePrevMonthDueAmount = getMonthDue(assigned, doublePreviousMonthDate);
+    double totalIncome = 0.0;
+    double totalDue = 0.0;
+    double monthPaidAmount = 0.0;
+    double prevMonthPaidAmount = 0.0;
+    double doublePrevMonthPaidAmount = 0.0;
+    double prevMonthDueAmount = 0.0;
+    double doublePrevMonthDueAmount = 0.0;
 
-    final monthPaidAmount = currentMonthSum(paid);
-    final prevMonthPaidAmount = getMonthDue(paid, previousMonthDate);
-    final doublePrevMonthPaidAmount = getMonthDue(paid, doublePreviousMonthDate);
+    // Single pass over payments for peak load performance
+    for (final e in p.paymentBox.values) {
+      if (e is! Map) continue;
+      final studentId = e['studentId']?.toString() ?? '';
+      if (!activeStudentIds.contains(studentId)) continue;
+
+      final m = Map<String, dynamic>.from(e);
+      final amt = (m['amount'] as num?)?.toDouble() ?? 0.0;
+      final status = m['status']?.toString();
+
+      DateTime? d;
+      try {
+        if (m['date'] != null) d = DateTime.parse(m['date']);
+      } catch (_) {}
+
+      if (status == 'paid') {
+        paid.add(m);
+        totalIncome += amt;
+        if (d != null) {
+          if (d.month == now.month && d.year == now.year) {
+            monthPaidAmount += amt;
+          } else if (d.month == previousMonthDate.month && d.year == previousMonthDate.year) {
+            prevMonthPaidAmount += amt;
+          } else if (d.month == doublePreviousMonthDate.month && d.year == doublePreviousMonthDate.year) {
+            doublePrevMonthPaidAmount += amt;
+          }
+        }
+      } else if (status == 'assigned') {
+        assigned.add(m);
+        totalDue += amt;
+        if (d != null) {
+          if (d.month == previousMonthDate.month && d.year == previousMonthDate.year) {
+            prevMonthDueAmount += amt;
+          } else if (d.month == doublePreviousMonthDate.month && d.year == doublePreviousMonthDate.year) {
+            doublePrevMonthDueAmount += amt;
+          }
+        }
+      }
+    }
+
+    // Sort recent feeds chronologically descending
+    paid.sort((a, b) {
+      final da = DateTime.tryParse(a['date'] ?? '') ?? DateTime(2000);
+      final db = DateTime.tryParse(b['date'] ?? '') ?? DateTime(2000);
+      return db.compareTo(da);
+    });
+
+    assigned.sort((a, b) {
+      final da = DateTime.tryParse(a['date'] ?? '') ?? DateTime(2000);
+      final db = DateTime.tryParse(b['date'] ?? '') ?? DateTime(2000);
+      return db.compareTo(da);
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -98,23 +120,23 @@ class HomeScreen extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
                       GridTileCard(
-                        title: 'Students',
-                        subtitle: '${p.students.length} registered',
+                        title: p.tr('students_card_title'),
+                        subtitle: p.tr('students_card_subtitle').replaceAll('%d', p.students.length.toString()),
                         icon: Icons.school,
                         iconBgColor: AppColors.primaryIconBg,
                         cardBgColor: AppColors.primaryTileBg,
                         onTap: () => onNavigate?.call(2),
                       ),
                       GridTileCard(
-                        title: 'Batches',
-                        subtitle: '${p.batches.length} active',
+                        title: p.tr('batches_card_title'),
+                        subtitle: p.tr('batches_card_subtitle').replaceAll('%d', p.batches.length.toString()),
                         icon: Icons.groups,
                         iconBgColor: const Color(0xFFFF9800),
                         cardBgColor: const Color(0xFFFFF3E0),
                         onTap: () => onNavigate?.call(1),
                       ),
                       GridTileCard(
-                        title: '$previousMonthName Due',
+                        title: p.tr('month_due_title').replaceAll('%s', AppStrings.formatMonth(previousMonthName, lang: p.appLanguage)),
                         subtitle: Formatters.formatCurrency(prevMonthDueAmount),
                         icon: Icons.history,
                         iconBgColor: const Color(0xFFFF5722),
@@ -128,7 +150,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: '$doublePreviousMonthName Due',
+                        title: p.tr('month_due_title').replaceAll('%s', AppStrings.formatMonth(doublePreviousMonthName, lang: p.appLanguage)),
                         subtitle: Formatters.formatCurrency(doublePrevMonthDueAmount),
                         icon: Icons.history_toggle_off_rounded,
                         iconBgColor: AppColors.warningIconBg,
@@ -142,7 +164,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: 'Total Due',
+                        title: p.tr('total_due_title'),
                         subtitle: Formatters.formatCurrency(totalDue),
                         icon: Icons.warning_amber_rounded,
                         iconBgColor: AppColors.warningIconBg,
@@ -156,7 +178,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: 'This Month Paid',
+                        title: p.tr('this_month_paid_title'),
                         subtitle: Formatters.formatCurrency(monthPaidAmount),
                         icon: Icons.trending_up,
                         iconBgColor: const Color(0xFF00BCD4),
@@ -170,7 +192,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: '$previousMonthName Paid',
+                        title: p.tr('month_paid_title').replaceAll('%s', AppStrings.formatMonth(previousMonthName, lang: p.appLanguage)),
                         subtitle: Formatters.formatCurrency(prevMonthPaidAmount),
                         icon: Icons.verified_outlined,
                         iconBgColor: AppColors.successIconBg,
@@ -184,7 +206,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: '$doublePreviousMonthName Paid',
+                        title: p.tr('month_paid_title').replaceAll('%s', AppStrings.formatMonth(doublePreviousMonthName, lang: p.appLanguage)),
                         subtitle: Formatters.formatCurrency(doublePrevMonthPaidAmount),
                         icon: Icons.task_alt,
                         iconBgColor: const Color(0xFF2E7D32),
@@ -198,7 +220,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       GridTileCard(
-                        title: 'Overall Paid',
+                        title: p.tr('overall_paid_title'),
                         subtitle: Formatters.formatCurrency(totalIncome),
                         icon: Icons.check_circle_outline,
                         iconBgColor: AppColors.headerGradientStart,
@@ -217,56 +239,98 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Recent Paid Fees',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: Text(
+                          p.tr('recent_paid_fees'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
                       ),
                       TextButton(
-                        onPressed: () {},
-                        child: const Text('View All', style: TextStyle(color: Colors.deepPurple)),
+                        onPressed: () => onNavigate?.call(3),
+                        child: Text(p.tr('view_all'), style: const TextStyle(color: Colors.deepPurple)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ...paid.take(3).map((e) {
-                    final d = DateTime.parse(e['date']);
-                    return RecentFeeCard(
-                      title: 'Student ID: ${e['studentId']}',
-                      dateText: '${d.day}/${d.month}/${d.year}',
-                      amount: 'TK ${e['amount']}',
-                      badgeText: 'Paid',
-                      badgeColor: Colors.purple.shade50,
-                      badgeTextColor: Colors.purple,
-                      iconBg: const Color(0xFFF0EFFF),
-                    );
-                  }),
+                  if (paid.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Center(
+                        child: Text(p.tr('no_fees_collected_yet'), style: const TextStyle(color: Colors.grey)),
+                      ),
+                    )
+                  else
+                    ...paid.take(3).map((e) {
+                      DateTime? d;
+                      try {
+                        d = DateTime.parse(e['date']);
+                      } catch (_) {}
+                      final dateStr = d != null ? '${d.day}/${d.month}/${d.year}' : 'N/A';
+                      return RecentFeeCard(
+                        title: p.tr('student_id_prefix').replaceAll('%s', '${e['studentId']}'),
+                        dateText: dateStr,
+                        amount: '${p.currencySymbol} ${e['amount']}',
+                        badgeText: p.tr('status_paid'),
+                        badgeColor: Colors.purple.shade50,
+                        badgeTextColor: Colors.purple,
+                        iconBg: const Color(0xFFF0EFFF),
+                      );
+                    }),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Recent Due Fees',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: Text(
+                          p.tr('recent_due_fees'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
                       ),
                       TextButton(
-                        onPressed: () {},
-                        child: const Text('View All', style: TextStyle(color: Colors.deepPurple)),
+                        onPressed: () => onNavigate?.call(3),
+                        child: Text(p.tr('view_all'), style: const TextStyle(color: Colors.deepPurple)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ...assigned.take(3).map((e) {
-                    final d = DateTime.parse(e['date']);
-                    return RecentFeeCard(
-                      title: 'Student ID: ${e['studentId']}',
-                      dateText: '${d.day}/${d.month}/${d.year}',
-                      amount: 'TK ${e['amount']}',
-                      badgeText: 'Due',
-                      badgeColor: Colors.orange.shade50,
-                      badgeTextColor: Colors.orange.shade800,
-                      iconBg: const Color(0xFFFFF3E0),
-                    );
-                  }),
+                  if (assigned.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Center(
+                        child: Text(p.tr('no_fees_currently_due'), style: const TextStyle(color: Colors.grey)),
+                      ),
+                    )
+                  else
+                    ...assigned.take(3).map((e) {
+                      DateTime? d;
+                      try {
+                        d = DateTime.parse(e['date']);
+                      } catch (_) {}
+                      final dateStr = d != null ? '${d.day}/${d.month}/${d.year}' : 'N/A';
+                      return RecentFeeCard(
+                        title: p.tr('student_id_prefix').replaceAll('%s', '${e['studentId']}'),
+                        dateText: dateStr,
+                        amount: '${p.currencySymbol} ${e['amount']}',
+                        badgeText: p.tr('status_due'),
+                        badgeColor: Colors.orange.shade50,
+                        badgeTextColor: Colors.orange.shade800,
+                        iconBg: const Color(0xFFFFF3E0),
+                      );
+                    }),
                 ],
               ),
             ),

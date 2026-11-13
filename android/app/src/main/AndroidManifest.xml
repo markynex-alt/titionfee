@@ -1,18 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-<<<<<<< HEAD
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <application
         android:label="tuitionfee"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-=======
-    <!-- INTERNET PERMISSION -->
-    <uses-permission android:name="android.permission.INTERNET"/>
-
-    <application
-        android:label="hablu_quiz"
-        android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
->>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -50,6 +42,12 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
         </intent>
     </queries>
 </manifest>

@@ -1,0 +1,402 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/app_provider.dart';
+
+class OnboardingDialog extends StatefulWidget {
+  const OnboardingDialog({super.key});
+
+  static Future<void> show(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const OnboardingDialog(),
+    );
+  }
+
+  @override
+  State<OnboardingDialog> createState() => _OnboardingDialogState();
+}
+
+class _OnboardingDialogState extends State<OnboardingDialog> {
+  final TextEditingController _orgCtrl = TextEditingController();
+  final TextEditingController _phoneCtrl = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: "1222743060-292lpfs5ktq5tgfhupfveu62lt7rv5kh.apps.googleusercontent.com",
+  );
+
+  bool _isSigningIn = false;
+  bool _isSaving = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = context.read<AppProvider>();
+    _orgCtrl.text = p.organizationName;
+    _phoneCtrl.text = p.contactPhone;
+  }
+
+  @override
+  void dispose() {
+    _orgCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isSigningIn = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        setState(() => _isSigningIn = false);
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await _auth.signInWithCredential(credential);
+
+      if (!mounted) return;
+      final p = context.read<AppProvider>();
+      await p.restoreFromFirebase(merge: true);
+
+      // Pre-fill fields if restored
+      if (_orgCtrl.text.isEmpty && p.organizationName.isNotEmpty) {
+        _orgCtrl.text = p.organizationName;
+      }
+      if (_phoneCtrl.text.isEmpty && p.contactPhone.isNotEmpty) {
+        _phoneCtrl.text = p.contactPhone;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().contains('10')
+            ? (context.read<AppProvider>().appLanguage == 'bn'
+                ? "প্লে স্টোর SHA-1 কি প্রয়োজন। আপনি অফলাইনেও চালিয়ে যেতে পারেন।"
+                : "Google Sign-In needs SHA-1 configured. You can still continue offline.")
+            : "Google Sign-In: $e";
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isSigningIn = false);
+      }
+    }
+  }
+
+  Future<void> _handleSave() async {
+    final org = _orgCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
+    final isBn = context.read<AppProvider>().appLanguage == 'bn';
+
+    if (org.length < 2) {
+      setState(() {
+        _errorMessage = isBn
+            ? "অনুগ্রহ করে প্রতিষ্ঠানের সঠিক নাম লিখুন (কমপক্ষে ২ অক্ষর)। এটি আবশ্যক।"
+            : "Please enter a valid organization name (at least 2 characters). Required.";
+      });
+      return;
+    }
+
+    final cleanPhone = phone.replaceAll(RegExp(r'[\s-]'), '');
+    final phoneRegex = RegExp(r'^(?:\+8801|8801|01)[3-9]\d{8}$');
+    if (!phoneRegex.hasMatch(cleanPhone)) {
+      setState(() {
+        _errorMessage = isBn
+            ? "অনুগ্রহ করে একটি সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন (যেমন: 01825690912)। এটি আবশ্যক।"
+            : "Please enter a valid 11-digit mobile number (e.g. 01825690912). Required.";
+      });
+      return;
+    }
+
+    if (_auth.currentUser == null) {
+      setState(() {
+        _errorMessage = isBn
+            ? "চালিয়ে যেতে অনুগ্রহ করে গুগল দিয়ে সাইন-ইন সম্পন্ন করুন। এটি বাধ্যতামূলক।"
+            : "Please sign in with Google to continue. This is required.";
+      });
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    final p = context.read<AppProvider>();
+    await p.saveOrganizationProfile(
+      orgName: org,
+      phone: phone,
+    );
+
+    if (mounted) {
+      setState(() => _isSaving = false);
+      Navigator.of(context, rootNavigator: true).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isBn
+                ? "স্বাগতম! আপনার প্রোফাইল সফলভাবে সংরক্ষিত হয়েছে।"
+                : "Welcome! Your organization profile has been saved.",
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.watch<AppProvider>();
+    final isBn = p.appLanguage == 'bn';
+    final user = _auth.currentUser;
+    final isLoggedIn = user != null;
+
+    return PopScope(
+      canPop: false,
+      child: Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480, maxHeight: 680),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header Icon and Title
+                Center(
+                  child: Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.deepPurple.shade600, Colors.deepPurple.shade400],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.deepPurple.withValues(alpha: 0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.school_rounded, color: Colors.white, size: 30),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isBn ? "টিউশন ফি ম্যানেজারে স্বাগতম" : "Welcome to Tuition Fee Manager",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isBn
+                      ? "চালিয়ে যেতে প্রতিষ্ঠানের নাম, যোগাযোগের নম্বর ও গুগল লগইন সম্পন্ন করুন।"
+                      : "Please provide your organization name, contact number, and Google Sign-in.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 18),
+
+                // Organization Name Field
+                TextField(
+                  controller: _orgCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: InputDecoration(
+                    labelText: isBn ? "কোচিং / প্রতিষ্ঠানের নাম *" : "Coaching / Organization Name *",
+                    hintText: isBn ? "যেমন: বিজ্ঞান একাডেমি" : "e.g. Science Coaching",
+                    prefixIcon: const Icon(Icons.business_rounded, color: Colors.deepPurple),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Contact Number Field
+                TextField(
+                  controller: _phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: isBn ? "যোগাযোগের ফোন নম্বর (হোয়াটসঅ্যাপ) *" : "Contact Phone / WhatsApp *",
+                    hintText: "01XXXXXXXXX",
+                    prefixIcon: const Icon(Icons.phone_outlined, color: Colors.deepPurple),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Google Sign In Section
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isLoggedIn ? Colors.green.shade50 : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isLoggedIn ? Colors.green.shade200 : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            isLoggedIn ? Icons.cloud_done : Icons.cloud_sync_outlined,
+                            size: 18,
+                            color: isLoggedIn ? Colors.green.shade700 : Colors.deepPurple,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              isLoggedIn
+                                  ? (isBn ? "ক্লাউড সিঙ্ক সক্রিয়" : "Cloud Sync Active")
+                                  : (isBn ? "গুগল সাইন-ইন (বাধ্যতামূলক) *" : "Google Sign-In (Required) *"),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: isLoggedIn ? Colors.green.shade900 : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (isLoggedIn) ...[
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 14,
+                              backgroundColor: Colors.green.shade200,
+                              child: Text(
+                                user.displayName?.isNotEmpty == true ? user.displayName![0] : 'U',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green.shade900),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                user.email ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, color: Colors.black87),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        Text(
+                          isBn
+                              ? "গুগল দিয়ে সাইন ইন করলে আপনার সব ডাটা ক্লাউডে সুরক্ষিত থাকবে।"
+                              : "Sign in with Google to sync your students & batches across devices.",
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 40),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            side: const BorderSide(color: Colors.deepPurple),
+                          ),
+                          onPressed: _isSigningIn ? null : _handleGoogleSignIn,
+                          icon: _isSigningIn
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.login, size: 18, color: Colors.deepPurple),
+                          label: Text(
+                            isBn ? "গুগল দিয়ে সাইন-ইন করুন *" : "Sign In with Google *",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.deepPurple),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 18),
+
+                // Action Button
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 46),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  onPressed: _isSaving ? null : _handleSave,
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(
+                          isBn ? "প্রোফাইল সেভ করে শুরু করুন" : "Save & Get Started",
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isBn
+                      ? "* প্রতিষ্ঠানের নাম, বৈধ ফোন নম্বর এবং গুগল লগইন আবশ্যক।"
+                      : "* Organization name, valid phone number, and Google Sign-in are required.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hive/hive.dart';
+import 'package:provider/provider.dart';
 import '../../../utils/app_colors.dart';
+import '../../../providers/app_provider.dart';
+import '../../../screens/subscription_plan_screen.dart';
 
 class HomeStickyHeader extends SliverPersistentHeaderDelegate {
   final double minHeight;
@@ -13,70 +14,25 @@ class HomeStickyHeader extends SliverPersistentHeaderDelegate {
     required this.maxHeight,
   });
 
-  static const String _cachedNameKey = 'cached_user_display_name';
-
-  Future<String> _getUserDisplayName(User? user) async {
-    // Open or retrieve your app's settings/cache box
-    final box = await Hive.openBox('app_settings');
-
-    // 1. Try Firebase User display name
-    final dName = user?.displayName;
-    if (dName != null && dName.trim().isNotEmpty) {
-      await box.put(_cachedNameKey, dName.trim());
-      return dName.trim();
+  String _getUserDisplayName(User? user, bool isBn) {
+    if (user == null) return isBn ? "গৃহশিক্ষক" : "User";
+    if (user.displayName != null && user.displayName!.trim().isNotEmpty) {
+      return user.displayName!.trim();
     }
-
-    // 2. Try fetching updated user info (if online)
-    if (user != null) {
-      try {
-        await user.reload();
-        final updatedUser = FirebaseAuth.instance.currentUser;
-        final updatedDName = updatedUser?.displayName;
-        if (updatedDName != null && updatedDName.trim().isNotEmpty) {
-          await box.put(_cachedNameKey, updatedDName.trim());
-          return updatedDName.trim();
-        }
-      } catch (_) {
-        // Ignored for offline support
-      }
-
-      // 3. Try Google Sign-In silently (if online)
-      try {
-        final googleAccount = await GoogleSignIn().signInSilently();
-        final gName = googleAccount?.displayName;
-        if (gName != null && gName.trim().isNotEmpty) {
-          await box.put(_cachedNameKey, gName.trim());
-          return gName.trim();
-        }
-      } catch (_) {
-        // Ignored for offline support
-      }
-
-      // 4. Fallback to Email username
-      final email = user.email;
-      if (email != null && email.contains('@')) {
-        final emailName = email.split('@').first;
-        if (emailName.isNotEmpty) {
-          final formattedName = emailName[0].toUpperCase() + emailName.substring(1);
-          await box.put(_cachedNameKey, formattedName);
-          return formattedName;
-        }
+    if (user.email != null && user.email!.contains('@')) {
+      final emailName = user.email!.split('@').first;
+      if (emailName.isNotEmpty) {
+        return emailName[0].toUpperCase() + emailName.substring(1);
       }
     }
-
-    // 5. Offline Fallback: Retrieve cached name from Hive
-    final cachedName = box.get(_cachedNameKey) as String?;
-    if (cachedName != null && cachedName.trim().isNotEmpty) {
-      return cachedName.trim();
-    }
-
-    // 6. Final default fallback
-    return 'User';
+    return isBn ? "গৃহশিক্ষক" : "User";
   }
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     final topPadding = MediaQuery.of(context).padding.top;
+    final p = context.watch<AppProvider>();
+    final isBn = p.appLanguage == 'bn';
 
     return SizedBox.expand(
       child: Container(
@@ -98,41 +54,41 @@ class HomeStickyHeader extends SliverPersistentHeaderDelegate {
                 stream: FirebaseAuth.instance.authStateChanges(),
                 builder: (context, snapshot) {
                   final user = snapshot.data;
-                  return FutureBuilder<String>(
-                    future: _getUserDisplayName(user),
-                    builder: (context, nameSnapshot) {
-                      final name = nameSnapshot.data ?? 'User';
-                      final firstName = name.split(' ').first;
+                  final name = _getUserDisplayName(user, isBn);
+                  final firstName = name.split(' ').first;
 
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Hello, $firstName 👋\nHave a great day ahead!',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      );
-                    },
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        p.organizationName.isNotEmpty
+                            ? p.organizationName
+                            : (isBn ? 'টিউশন ফি ম্যানেজার' : 'Tuition Fee Manager'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        isBn
+                            ? 'স্বাগতম, $firstName 👋'
+                            : 'Hello, $firstName 👋',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   );
                 },
               ),
@@ -141,32 +97,42 @@ class HomeStickyHeader extends SliverPersistentHeaderDelegate {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                /*Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.notifications_none, color: Colors.white, size: 26),
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
+                InkWell(
+                  onTap: () => SubscriptionPlanScreen.navigate(context),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          p.currentPlan.isFree ? Icons.star_border : Icons.workspace_premium,
+                          color: Colors.amberAccent,
+                          size: 13,
                         ),
-                        child: const Text(
-                          '3',
-                          style: TextStyle(
+                        const SizedBox(width: 4),
+                        Text(
+                          p.currentPlan.isFree
+                              ? (isBn ? "ফ্রি টিয়ার" : "Free")
+                              : (p.planDaysRemaining != null
+                                  ? "${p.currentPlan.name(p.appLanguage).split(' ').first} • ${p.planDaysRemaining}d"
+                                  : p.currentPlan.name(p.appLanguage)),
+                          style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 8,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),*/
-                const SizedBox(width: 12),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 StreamBuilder<User?>(
                   stream: FirebaseAuth.instance.authStateChanges(),
                   builder: (context, snapshot) {
@@ -174,22 +140,22 @@ class HomeStickyHeader extends SliverPersistentHeaderDelegate {
                     final photoUrl = user?.photoURL;
 
                     return CircleAvatar(
-                      radius: 17,
+                      radius: 18,
                       backgroundColor: Colors.white24,
                       child: photoUrl != null && photoUrl.isNotEmpty
                           ? ClipOval(
-                        child: Image.network(
-                          photoUrl,
-                          width: 34,
-                          height: 34,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      )
+                              child: Image.network(
+                                photoUrl,
+                                width: 36,
+                                height: 36,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            )
                           : const Icon(Icons.person, color: Colors.white, size: 18),
                     );
                   },

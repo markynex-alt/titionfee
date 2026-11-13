@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
-
 
 import 'providers/app_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/batch_screen.dart';
 import 'screens/student_screen.dart';
 import 'screens/settings_screen.dart';
-import 'screens/account_screen.dart'; // make sure this file exists
+import 'screens/account_screen.dart';
+import 'dialoges/onboarding_dialog.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase safely
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (_) {
+    // If Firebase init options fail on an unconfigured target, try fallback
+    try {
+      await Firebase.initializeApp();
+    } catch (_) {}
+  }
 
   // Initialize Hive
   await Hive.initFlutter();
@@ -37,40 +47,83 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => AppProvider(),
-      child: const MaterialApp(
+      child: MaterialApp(
+        title: "Tuition Fee Manager",
         debugShowCheckedModeBanner: false,
-        home: MainNav(),
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF6C63FF),
+            primary: const Color(0xFF5B4DFF),
+            surface: const Color(0xFFF8F9FA),
+            brightness: Brightness.light,
+          ),
+          textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
+          appBarTheme: const AppBarTheme(
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: Colors.white,
+            foregroundColor: Color(0xFF1E1E2E),
+            centerTitle: false,
+            titleTextStyle: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E1E2E),
+            ),
+          ),
+          cardTheme: CardThemeData(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.grey.shade200),
+            ),
+            color: Colors.white,
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF6C63FF), width: 1.5),
+            ),
+          ),
+          navigationBarTheme: NavigationBarThemeData(
+            elevation: 8,
+            backgroundColor: Colors.white,
+            indicatorColor: const Color(0xFFEDE7F6),
+            iconTheme: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return const IconThemeData(color: Color(0xFF5B4DFF));
+              }
+              return const IconThemeData(color: Colors.grey);
+            }),
+            labelTextStyle: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF5B4DFF),
+                );
+              }
+              return const TextStyle(fontSize: 12, color: Colors.grey);
+            }),
+          ),
+        ),
+        home: const MainNav(),
       ),
-=======
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
-import 'screens/first_screen.dart';
-import 'package:in_app_update/in_app_update.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  runApp(const QuizApp());
-}
-
-class QuizApp extends StatelessWidget {
-  const QuizApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: "হাবলু কুইজ",
-      theme: ThemeData(primarySwatch: Colors.indigo),
-      home: const FirstScreenWrapper(), // Wrap first screen to check updates
->>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
     );
   }
 }
 
-<<<<<<< HEAD
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
 
@@ -81,49 +134,29 @@ class MainNav extends StatefulWidget {
 class _MainNavState extends State<MainNav> {
   int index = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final p = context.read<AppProvider>();
+      if (!p.isOnboardingCompleted) {
+        OnboardingDialog.show(context);
+      }
+    });
+  }
+
   void _navigateToTab(int tabIndex) {
     setState(() {
       index = tabIndex;
     });
-=======
-/// This widget wraps your FirstScreen to check app updates
-class FirstScreenWrapper extends StatefulWidget {
-  const FirstScreenWrapper({super.key});
-
-  @override
-  State<FirstScreenWrapper> createState() => _FirstScreenWrapperState();
-}
-
-class _FirstScreenWrapperState extends State<FirstScreenWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    _checkUpdate();
-  }
-
-  /// -------------------------
-  /// Check for update using in_app_update package
-  /// -------------------------
-  Future<void> _checkUpdate() async {
-    try {
-      AppUpdateInfo updateInfo = await InAppUpdate.checkForUpdate();
-
-      if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
-        // Force immediate update
-        await InAppUpdate.performImmediateUpdate();
-      }
-    } catch (e) {
-      // If update check fails, just continue to app
-      debugPrint("Update check failed: $e");
-    }
->>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
   }
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
+    final p = context.watch<AppProvider>();
+
     final pages = [
-      HomeScreen(onNavigate: _navigateToTab), // Pass the callback here
+      HomeScreen(onNavigate: _navigateToTab),
       const BatchScreen(),
       const StudentScreen(),
       const AccountScreen(),
@@ -135,17 +168,34 @@ class _FirstScreenWrapperState extends State<FirstScreenWrapper> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (i) => setState(() => index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard), label: "Home"),
-          NavigationDestination(icon: Icon(Icons.group), label: "Batch"),
-          NavigationDestination(icon: Icon(Icons.school), label: "Students"),
-          NavigationDestination(icon: Icon(Icons.account_circle), label: "Account"),
-          NavigationDestination(icon: Icon(Icons.settings), label: "Settings"),
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.dashboard_outlined),
+            selectedIcon: const Icon(Icons.dashboard),
+            label: p.tr('nav_home'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.groups_outlined),
+            selectedIcon: const Icon(Icons.groups),
+            label: p.tr('nav_batch'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.school_outlined),
+            selectedIcon: const Icon(Icons.school),
+            label: p.tr('nav_students'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: const Icon(Icons.account_balance_wallet),
+            label: p.tr('nav_account'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: p.tr('nav_settings'),
+          ),
         ],
       ),
     );
-=======
-    return const FirstScreen(); // Load your first screen normally
->>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
   }
 }

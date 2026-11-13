@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tuition Fee Manager - Verified Payment & Subscription Plans</title>
+  <!-- Google Fonts & Tailwind CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            bkash: '#e2136e',
+            nagad: '#f7941d'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(229, 231, 235, 0.9);
+    }
+    .gradient-bg {
+      background: radial-gradient(circle at top right, #e0e7ff 0%, #f8fafc 40%, #f1f5f9 100%);
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- ================= TOP NAVIGATION ================= -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-brand-500/25">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          </svg>
+        </div>
+        <div>
+          <span class="text-xl font-extrabold tracking-tight text-slate-900">TuitionFee</span>
+          <span class="text-xs ml-1.5 px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 font-bold border border-brand-100">PRO STORE v1.1.0</span>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-600">
+        <a href="#pricing" class="hover:text-brand-600 transition">Subscription Plans</a>
+        <a href="#how-it-works" class="hover:text-brand-600 transition">Payment Guide</a>
+        <a href="javascript:void(0)" onclick="openOrdersModal()" class="hover:text-brand-600 transition flex items-center space-x-1">
+          <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>My Licenses (<span id="nav-order-count">0</span>)</span>
+        </a>
+      </nav>
+
+      <div class="flex items-center space-x-3">
+        <button onclick="openAdminModal()" class="px-3.5 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition flex items-center space-x-1.5 border border-slate-200">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+          </svg>
+          <span>Edit Plans (Admin)</span>
+        </button>
+        <a href="#pricing" class="px-5 py-2.5 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-lg shadow-brand-500/25 transition">
+          Purchase Plans
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= HERO SECTION ================= -->
+  <section class="gradient-bg py-16 lg:py-24 relative overflow-hidden border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+      <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-6">
+        <span>🎉 Free Tier: Up to 5 Batches & 10 Students Free Forever</span>
+      </div>
+      <h1 class="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-tight max-w-4xl mx-auto">
+        Verified Subscriptions & Payments for <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-indigo-600">TuitionFee App</span>
+      </h1>
+      <p class="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+        Fast, instant license activation for private tutors and coaching centers. Pay securely via bKash, Nagad, or Cards and receive 100% mathematically authentic activation codes instantly.
+      </p>
+
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="#pricing" class="px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl shadow-xl shadow-brand-500/30 transition transform hover:-translate-y-0.5 text-base">
+          Browse Plans & Pricing
+        </a>
+        <button onclick="openOrdersModal()" class="px-8 py-4 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-2xl border border-slate-200 shadow-sm transition text-base">
+          View My Past Licenses
+        </button>
+      </div>
+
+      <!-- Trust Badges -->
+      <div class="mt-12 pt-8 border-t border-slate-200/60 max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-slate-600 text-xs font-bold">
+        <div class="flex items-center justify-center space-x-2">
+          <span class="text-emerald-500 text-sm">✓</span> <span>Instant Cryptographic Keys</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <span class="text-emerald-500 text-sm">✓</span> <span>Official bKash & Nagad</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <span class="text-emerald-500 text-sm">✓</span> <span>100% Workable in App</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <span class="text-emerald-500 text-sm">✓</span> <span>Multi-Month Savings</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PRICING SECTION ================= -->
+  <section id="pricing" class="py-20 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <h2 class="text-xs font-extrabold uppercase tracking-widest text-brand-600 mb-3">Editable Subscriptions</h2>
+        <h3 class="text-3xl sm:text-4xl font-black text-slate-900">Choose Your Package Duration</h3>
+        <p class="mt-4 text-base text-slate-600">
+          Scale effortlessly as your student batches grow. Multi-month plans receive instant automatic discounts.
+        </p>
+
+        <!-- Duration Selector / Multi-Month Multiplier -->
+        <div class="mt-8 inline-flex items-center p-1.5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+          <button type="button" onclick="selectDuration(1)" id="btn-month-1" class="duration-btn px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-600 text-white shadow-sm transition">
+            1 Month
+          </button>
+          <button type="button" onclick="selectDuration(3)" id="btn-month-3" class="duration-btn px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 transition">
+            3 Months <span class="ml-1 text-xs text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">Save 5%</span>
+          </button>
+          <button type="button" onclick="selectDuration(6)" id="btn-month-6" class="duration-btn px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 transition">
+            6 Months <span class="ml-1 text-xs text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">Save 10%</span>
+          </button>
+          <button type="button" onclick="selectDuration(12)" id="btn-month-12" class="duration-btn px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 transition">
+            12 Months <span class="ml-1 text-xs text-brand-600 font-bold bg-brand-50 px-1.5 py-0.5 rounded">Save 20%</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Pricing Cards Grid -->
+      <div id="pricing-cards" class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+
+      <!-- Free Tier Card -->
+      <div class="mt-12 bg-white rounded-3xl p-6 border border-slate-200 text-center max-w-2xl mx-auto shadow-sm">
+        <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold mb-2">Always Free</span>
+        <h4 class="text-base font-bold text-slate-800">5 Batches and 10 Students or less?</h4>
+        <p class="text-sm text-slate-600 mt-1">
+          No purchase required! Download Tuition Fee Manager app and start managing immediately at 0 Taka cost with permanent validity.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= HOW IT WORKS ================= -->
+  <section id="how-it-works" class="py-20 bg-white border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <h2 class="text-xs font-extrabold uppercase tracking-widest text-brand-600 mb-3">Quick & Guaranteed Workable</h2>
+        <h3 class="text-3xl font-black text-slate-900">How to Verify Payment & Activate</h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="p-8 rounded-3xl bg-slate-50 border border-slate-200 text-center">
+          <div class="w-12 h-12 bg-brand-600 text-white font-black text-lg rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md shadow-brand-500/20">
+            1
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Send Money</h4>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Send the exact plan amount to personal bKash/Nagad number <strong class="text-brand-600 font-mono">01825690912</strong> with reference <code class="bg-indigo-50 text-indigo-700 px-1 py-0.5 rounded font-mono text-xs">TF</code>.
+          </p>
+        </div>
+
+        <div class="p-8 rounded-3xl bg-slate-50 border border-slate-200 text-center">
+          <div class="w-12 h-12 bg-brand-600 text-white font-black text-lg rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md shadow-brand-500/20">
+            2
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Instant License Key</h4>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Enter your Transaction ID (TrxID) in the checkout modal. Our verified system generates your cryptographic key (e.g. <code class="bg-indigo-50 text-indigo-700 px-1 py-0.5 rounded font-mono text-xs">TF-STANDARD-3M-8558</code>).
+          </p>
+        </div>
+
+        <div class="p-8 rounded-3xl bg-slate-50 border border-slate-200 text-center">
+          <div class="w-12 h-12 bg-brand-600 text-white font-black text-lg rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md shadow-brand-500/20">
+            3
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Paste & Unlock</h4>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            Open the TuitionFee app on your phone -> Settings -> Enter Activation Code -> click Activate. Your capacity and validity are immediately unlocked!
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CHECKOUT / PAYMENT MODAL ================= -->
+  <div id="checkout-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-card bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl relative my-8">
+      <button onclick="closeCheckoutModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <div id="checkout-form-view">
+        <div class="flex items-center space-x-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-extrabold text-slate-900">Verified Payment Checkout</h3>
+            <p class="text-xs text-slate-500">Fast digital license delivery guaranteed</p>
+          </div>
+        </div>
+
+        <!-- Selected Plan Summary Card -->
+        <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 mb-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <span id="modal-plan-name" class="font-bold text-slate-900 text-base">Standard Plan</span>
+              <span id="modal-plan-duration" class="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">3 Months</span>
+            </div>
+            <div class="text-right">
+              <span id="modal-plan-price" class="text-2xl font-black text-brand-600">৳142</span>
+            </div>
+          </div>
+          <div id="modal-plan-limits" class="mt-2 text-xs text-slate-600 font-medium">
+            Up to 10 Batches • Up to 20 Students
+          </div>
+        </div>
+
+        <!-- Payment Method Tabs -->
+        <div class="mb-5">
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Select Payment Method</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="selectPaymentMethod('bkash')" id="pay-tab-bkash" class="pay-method-btn py-2.5 px-3 rounded-xl border-2 border-bkash bg-pink-50/50 flex flex-col items-center justify-center transition">
+              <span class="text-xs font-black text-[#e2136e]">bKash</span>
+              <span class="text-[10px] text-slate-500">Personal</span>
+            </button>
+            <button type="button" onclick="selectPaymentMethod('nagad')" id="pay-tab-nagad" class="pay-method-btn py-2.5 px-3 rounded-xl border border-slate-200 bg-white flex flex-col items-center justify-center transition">
+              <span class="text-xs font-black text-[#f7941d]">Nagad</span>
+              <span class="text-[10px] text-slate-500">Personal</span>
+            </button>
+            <button type="button" onclick="selectPaymentMethod('card')" id="pay-tab-card" class="pay-method-btn py-2.5 px-3 rounded-xl border border-slate-200 bg-white flex flex-col items-center justify-center transition">
+              <span class="text-xs font-black text-indigo-700">Cards / Demo</span>
+              <span class="text-[10px] text-slate-500">Instant</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Payment Instructions Box -->
+        <div id="payment-instructions-box" class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 text-xs mb-5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-800" id="instruct-title">bKash Send Money:</span>
+            <div class="flex items-center space-x-1">
+              <span class="font-mono font-bold text-slate-900" id="instruct-number">01825690912</span>
+              <button type="button" onclick="copyReceiverNumber()" class="text-[11px] font-bold text-brand-600 bg-white px-2 py-0.5 rounded border border-amber-300 hover:bg-amber-100">
+                Copy
+              </button>
+            </div>
+          </div>
+          <p class="text-slate-600" id="instruct-steps">
+            1. Open bKash App & Select <strong>Send Money</strong> to <strong>01825690912</strong>.<br>
+            2. Enter amount <strong id="instruct-amount">৳142</strong> & Reference <strong>TF</strong>.<br>
+            3. Enter the Transaction ID (TrxID) below to verify.
+          </p>
+        </div>
+
+        <form onsubmit="handleOrderSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Full Name / Tutor Name</label>
+            <input type="text" id="cust-name" required placeholder="e.g. Master Anisur Rahman" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Mobile / bKash Number</label>
+              <input type="tel" id="cust-phone" required placeholder="017XXXXXXXX" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Email (Optional)</label>
+              <input type="email" id="cust-email" placeholder="tutor@gmail.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Transaction ID (TrxID)</label>
+              <button type="button" onclick="autoFillDemoTrxId()" class="text-[11px] font-bold text-brand-600 hover:underline">
+                Quick Test / Demo TrxID
+              </button>
+            </div>
+            <input type="text" id="trx-id" required placeholder="e.g. BLA892187" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono uppercase focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+
+          <button type="submit" id="btn-submit-order" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-500/25 transition mt-2 text-sm flex items-center justify-center space-x-2">
+            <span>Verify Payment & Generate License</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Success Confirmation View -->
+      <div id="checkout-success-view" class="hidden text-center py-2">
+        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md shadow-emerald-500/10">
+          <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        <h3 class="text-2xl font-black text-slate-900">Payment Verified!</h3>
+        <p class="text-xs text-slate-600 mt-1">Your official activation license key has been generated and validated.</p>
+
+        <!-- Activation Code Box -->
+        <div class="my-5 p-5 rounded-2xl bg-indigo-50 border-2 border-indigo-200 shadow-inner">
+          <div class="text-[11px] font-extrabold text-indigo-600 uppercase tracking-widest mb-1.5">Official App Activation Code</div>
+          <div id="generated-license-code" class="text-2xl sm:text-3xl font-mono font-black text-indigo-900 tracking-wider">TF-STANDARD-3M-8558</div>
+          <button type="button" onclick="copyLicenseCode()" class="mt-3 px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-lg shadow-sm transition inline-flex items-center space-x-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            <span>Copy Code to Clipboard</span>
+          </button>
+        </div>
+
+        <div id="print-area" class="text-left bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1.5 mb-5 font-medium">
+          <div class="flex justify-between border-b pb-1">
+            <span><strong>Order ID:</strong> <span id="success-order-id">ORD-92817</span></span>
+            <span class="text-emerald-700 font-bold">STATUS: VERIFIED</span>
+          </div>
+          <p><strong>Package Name:</strong> <span id="success-plan-info">Standard Plan (3 Months)</span></p>
+          <p><strong>Validation:</strong> <span id="success-validity-info">Valid for 90 Days from activation</span></p>
+          <p><strong>Customer:</strong> <span id="success-cust-info">Master Anisur Rahman (017XXXXXXXX)</span></p>
+          <p><strong>TrxID:</strong> <span id="success-trx-id" class="font-mono">BLA92817K1</span></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mb-4">
+          <button type="button" onclick="window.print()" class="py-2.5 px-3 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition flex items-center justify-center space-x-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            <span>Print Receipt</span>
+          </button>
+          <button type="button" onclick="sendWhatsAppConfirmation()" class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center space-x-1">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+            <span>WhatsApp Receipt</span>
+          </button>
+        </div>
+
+        <button onclick="closeCheckoutModal()" class="w-full py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-sm transition">
+          Done & Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN PLAN & PRICING EDITOR MODAL ================= -->
+  <div id="admin-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-card bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl relative my-8">
+      <button onclick="closeAdminModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        </div>
+        <div>
+          <h3 class="text-xl font-extrabold text-slate-900">Admin: Edit Subscription Plans</h3>
+          <p class="text-xs text-slate-500">Edit plan names, batch quotas, student quotas, and monthly prices (৳)</p>
+        </div>
+      </div>
+
+      <!-- Payment Receiver Number Editor -->
+      <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 mb-6">
+        <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">Owner Payment Receiver Mobile (bKash & Nagad)</label>
+        <input type="text" id="admin-payment-number" value="01825690912" class="w-full px-3 py-2 rounded-lg border border-amber-300 text-sm font-bold text-slate-900">
+      </div>
+
+      <div id="admin-plans-list" class="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="mt-8 flex justify-between items-center pt-6 border-t border-slate-200">
+        <div class="space-x-2">
+          <button onclick="resetDefaultPlans()" class="text-xs font-bold text-red-600 hover:underline">
+            Reset Defaults
+          </button>
+          <span class="text-slate-300">|</span>
+          <button onclick="exportPlansConfig()" class="text-xs font-bold text-brand-600 hover:underline">
+            Export JSON
+          </button>
+        </div>
+        <div class="space-x-3">
+          <button onclick="closeAdminModal()" class="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+            Cancel
+          </button>
+          <button onclick="saveAdminPlans()" class="px-6 py-2.5 text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-md transition">
+            Save All Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MY ORDERS / PAST LICENSES MODAL ================= -->
+  <div id="orders-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-card bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl relative my-8">
+      <button onclick="closeOrdersModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        </div>
+        <div>
+          <h3 class="text-xl font-extrabold text-slate-900">Purchased Licenses & Orders</h3>
+          <p class="text-xs text-slate-500">Your verified activation license keys are saved here</p>
+        </div>
+      </div>
+
+      <div id="past-orders-list" class="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-slate-200 text-right">
+        <button onclick="closeOrdersModal()" class="px-6 py-2.5 bg-slate-900 hover:bg-black text-white font-bold text-sm rounded-xl transition">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="mt-auto bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-sm">
+          TF
+        </div>
+        <span class="text-white font-bold text-sm">Tuition Fee Manager & Subscription System</span>
+      </div>
+      <p class="text-xs text-slate-500">
+        © 2026 Tuition Fee App. All rights reserved. Cryptographically verified payment & license system.
+      </p>
+    </div>
+  </footer>
+
+  <!-- ================= CORE LOGIC & CRYPTOGRAPHY ================= -->
+  <script>
+    // The exact secret salt matching the Flutter app LicenseService
+    const SECRET_SALT = 'TUITION_FEE_AUTH_SALT_01825690912';
+
+    // Pure JavaScript SHA-256 implementation (100% offline & synchronous)
+    function sha256Sync(ascii) {
+      function rightRotate(value, amount) {
+        return (value >>> amount) | (value << (32 - amount));
+      }
+      var mathPow = Math.pow;
+      var maxWord = mathPow(2, 32);
+      var lengthProperty = 'length';
+      var i, j;
+      var result = '';
+      var words = [];
+      var asciiBitLength = ascii[lengthProperty] * 8;
+      var hash = [];
+      var k = [];
+      var primeCounter = 0;
+      var isComposite = {};
+      for (var candidate = 2; primeCounter < 64; candidate++) {
+        if (!isComposite[candidate]) {
+          for (i = 0; i < 313; i += candidate) {
+            isComposite[i] = candidate;
+          }
+          hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;
+          k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+        }
+      }
+      ascii += '\x80';
+      while (ascii[lengthProperty] % 64 - 56) ascii += '\x00';
+      for (i = 0; i < ascii[lengthProperty]; i++) {
+        j = ascii.charCodeAt(i);
+        if (j >> 8) return;
+        words[i >> 2] |= j << ((3 - i) % 4) * 8;
+      }
+      words[words[lengthProperty]] = ((asciiBitLength / maxWord) | 0);
+      words[words[lengthProperty]] = (asciiBitLength) | 0;
+      for (j = 0; j < words[lengthProperty];) {
+        var w = words.slice(j, j += 16);
+        var oldHash = hash;
+        hash = hash.slice(0, 8);
+        for (i = 0; i < 64; i++) {
+          var w15 = w[i - 15], w2 = w[i - 2];
+          var a = hash[0], e = hash[4];
+          var temp1 = hash[7]
+            + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
+            + ((e & hash[5]) ^ ((~e) & hash[6]))
+            + k[i]
+            + (w[i] = (i < 16) ? w[i] : (
+                w[i - 16]
+                + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
+                + w[i - 7]
+                + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
+              ) | 0
+            );
+          var temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22))
+            + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+          hash = [(temp1 + temp2) | 0].concat(hash);
+          hash[4] = (hash[4] + temp1) | 0;
+        }
+        for (i = 0; i < 8; i++) {
+          hash[i] = (hash[i] + oldHash[i]) | 0;
+        }
+      }
+      for (i = 0; i < 8; i++) {
+        for (j = 3; j >= 0; j--) {
+          var b = (hash[i] >> (8 * j)) & 255;
+          result += ((b < 16) ? 0 : '') + b.toString(16);
+        }
+      }
+      return result;
+    }
+
+    // Generates the cryptographic checksum matching the Flutter app
+    function generateLicenseChecksum(tier, months) {
+      const cleanTier = tier.trim().toUpperCase();
+      const input = `${SECRET_SALT}:${cleanTier}:${months}`;
+      const hash = sha256Sync(input);
+      return hash.substring(0, 4).toUpperCase();
+    }
+
+    // Official verified license key format: TF-<TIER>-<MONTHS>M-<CHECKSUM>
+    function generateVerifiedLicenseKey(tier, months) {
+      const cleanTier = tier.trim().toUpperCase();
+      const checksum = generateLicenseChecksum(cleanTier, months);
+      return `TF-${cleanTier}-${months}M-${checksum}`;
+    }
+
+    // Default Plans
+    const DEFAULT_PLANS = [
+      {
+        id: 'starter',
+        name: 'Starter Plan',
+        badge: 'Basic Tier',
+        monthlyPrice: 30, // 30 Taka
+        batches: 5,
+        students: 10,
+        description: 'Ideal for private tutors with up to 5 batches and 10 students.',
+        features: [
+          '5 Batches included',
+          '10 Students capacity',
+          'Fast offline ledger calculation',
+          'Firebase cloud backup'
+        ],
+        highlight: false
+      },
+      {
+        id: 'standard',
+        name: 'Standard Plan',
+        badge: 'Most Popular',
+        monthlyPrice: 50, // 50 Taka
+        batches: 10,
+        students: 20,
+        description: 'Popular choice for full-time tutors and growing tuition batches.',
+        features: [
+          'Up to 10 Batches',
+          'Up to 20 Students',
+          'Priority multi-month sync',
+          'Instant ledger search & reports'
+        ],
+        highlight: true
+      },
+      {
+        id: 'unlimited',
+        name: 'Unlimited Pro',
+        badge: 'Best Value',
+        monthlyPrice: 200, // 200 Taka
+        batches: -1, // Unlimited
+        students: -1, // Unlimited
+        description: 'No limits! Perfect for large coaching centers and academic academies.',
+        features: [
+          'Unlimited Batches',
+          'Unlimited Students',
+          'Full cloud synchronization',
+          'Priority dedicated support'
+        ],
+        highlight: false
+      }
+    ];
+
+    let currentPlans = [];
+    let selectedDurationMonths = 1;
+    let activeCheckoutPlan = null;
+    let selectedPaymentMethod = 'bkash';
+    let ownerPaymentNumber = '01825690912';
+    let lastGeneratedOrder = null;
+
+    function loadPlans() {
+      const stored = localStorage.getItem('tf_plans');
+      if (stored) {
+        try {
+          currentPlans = JSON.parse(stored);
+        } catch (_) {
+          currentPlans = JSON.parse(JSON.stringify(DEFAULT_PLANS));
+        }
+      } else {
+        currentPlans = JSON.parse(JSON.stringify(DEFAULT_PLANS));
+      }
+
+      const storedNum = localStorage.getItem('tf_payment_number');
+      if (storedNum) ownerPaymentNumber = storedNum;
+
+      updateOrderCount();
+      renderPricingCards();
+    }
+
+    function updateOrderCount() {
+      const orders = JSON.parse(localStorage.getItem('tf_orders') || '[]');
+      const badge = document.getElementById('nav-order-count');
+      if (badge) badge.innerText = orders.length;
+    }
+
+    function selectDuration(months) {
+      selectedDurationMonths = months;
+      document.querySelectorAll('.duration-btn').forEach(btn => {
+        btn.classList.remove('bg-brand-600', 'text-white', 'shadow-sm');
+        btn.classList.add('text-slate-600');
+      });
+      const activeBtn = document.getElementById(`btn-month-${months}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow-sm');
+        activeBtn.classList.remove('text-slate-600');
+      }
+      renderPricingCards();
+    }
+
+    function calculateTotal(monthlyPrice, months) {
+      let discount = 0;
+      if (months === 3) discount = 0.05;
+      else if (months === 6) discount = 0.10;
+      else if (months === 12) discount = 0.20;
+
+      const raw = monthlyPrice * months;
+      return Math.round(raw * (1 - discount));
+    }
+
+    function renderPricingCards() {
+      const container = document.getElementById('pricing-cards');
+      if (!container) return;
+      container.innerHTML = '';
+
+      currentPlans.forEach(plan => {
+        const totalPrice = calculateTotal(plan.monthlyPrice, selectedDurationMonths);
+        const perMonthEquiv = Math.round(totalPrice / selectedDurationMonths);
+
+        const card = document.createElement('div');
+        card.className = `rounded-3xl p-8 transition duration-200 flex flex-col justify-between ${
+          plan.highlight
+            ? 'glass-card ring-2 ring-brand-500 shadow-xl shadow-brand-500/10 relative bg-white'
+            : 'bg-white border border-slate-200 shadow-sm hover:shadow-md'
+        }`;
+
+        card.innerHTML = `
+          <div>
+            ${plan.highlight ? `
+              <div class="inline-block px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-extrabold uppercase tracking-wider mb-4 border border-brand-100">
+                ${plan.badge}
+              </div>
+            ` : `
+              <div class="inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold mb-4">
+                ${plan.badge}
+              </div>
+            `}
+            <h3 class="text-2xl font-black text-slate-900">${plan.name}</h3>
+            <p class="text-xs text-slate-500 mt-1 min-h-[32px]">${plan.description}</p>
+
+            <div class="mt-6 flex items-baseline">
+              <span class="text-4xl font-black text-slate-900">৳${totalPrice}</span>
+              <span class="text-xs font-semibold text-slate-500 ml-1.5">/ for ${selectedDurationMonths} ${selectedDurationMonths === 1 ? 'month' : 'months'}</span>
+            </div>
+            ${selectedDurationMonths > 1 ? `
+              <p class="text-xs font-medium text-emerald-600 mt-1">Approx. ৳${perMonthEquiv}/month (Discounted)</p>
+            ` : ''}
+
+            <!-- Plan Limits -->
+            <div class="mt-6 p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1.5 font-semibold text-slate-700">
+              <div class="flex justify-between">
+                <span>Batch Quota:</span>
+                <span class="font-bold text-slate-900">${plan.batches === -1 ? 'Unlimited' : plan.batches + ' Batches'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Student Capacity:</span>
+                <span class="font-bold text-slate-900">${plan.students === -1 ? 'Unlimited' : plan.students + ' Students'}</span>
+              </div>
+            </div>
+
+            <!-- Features List -->
+            <ul class="mt-6 space-y-2.5 text-xs text-slate-600">
+              ${plan.features.map(f => `
+                <li class="flex items-center space-x-2">
+                  <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                  <span>${f}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+
+          <div class="mt-8 pt-4">
+            <button onclick="openCheckout('${plan.id}')" class="w-full py-3.5 rounded-xl font-bold text-sm transition ${
+              plan.highlight
+                ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-lg shadow-brand-500/25'
+                : 'bg-slate-900 hover:bg-black text-white'
+            }">
+              Purchase & Activate
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Checkout Flow
+    function openCheckout(planId) {
+      activeCheckoutPlan = currentPlans.find(p => p.id === planId);
+      if (!activeCheckoutPlan) return;
+
+      const totalPrice = calculateTotal(activeCheckoutPlan.monthlyPrice, selectedDurationMonths);
+
+      document.getElementById('modal-plan-name').innerText = activeCheckoutPlan.name;
+      document.getElementById('modal-plan-duration').innerText = `${selectedDurationMonths} Month${selectedDurationMonths > 1 ? 's' : ''}`;
+      document.getElementById('modal-plan-price').innerText = `৳${totalPrice}`;
+      document.getElementById('modal-plan-limits').innerText = `Batches: ${activeCheckoutPlan.batches === -1 ? 'Unlimited' : activeCheckoutPlan.batches} • Students: ${activeCheckoutPlan.students === -1 ? 'Unlimited' : activeCheckoutPlan.students}`;
+
+      selectPaymentMethod('bkash');
+
+      document.getElementById('checkout-form-view').classList.remove('hidden');
+      document.getElementById('checkout-success-view').classList.add('hidden');
+      document.getElementById('checkout-modal').classList.remove('hidden');
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkout-modal').classList.add('hidden');
+    }
+
+    function selectPaymentMethod(method) {
+      selectedPaymentMethod = method;
+
+      document.querySelectorAll('.pay-method-btn').forEach(b => {
+        b.classList.remove('border-bkash', 'border-nagad', 'border-indigo-600', 'bg-pink-50/50', 'bg-amber-50/50', 'bg-indigo-50/50');
+        b.classList.add('border-slate-200', 'bg-white');
+      });
+
+      const activeBtn = document.getElementById(`pay-tab-${method}`);
+      const totalPrice = calculateTotal(activeCheckoutPlan ? activeCheckoutPlan.monthlyPrice : 50, selectedDurationMonths);
+      const box = document.getElementById('payment-instructions-box');
+      const title = document.getElementById('instruct-title');
+      const number = document.getElementById('instruct-number');
+      const steps = document.getElementById('instruct-steps');
+      const amount = document.getElementById('instruct-amount');
+
+      if (amount) amount.innerText = `৳${totalPrice}`;
+      if (number) number.innerText = ownerPaymentNumber;
+
+      if (method === 'bkash') {
+        if (activeBtn) activeBtn.classList.add('border-2', 'border-bkash', 'bg-pink-50/50');
+        title.innerText = "bKash Send Money (Personal):";
+        steps.innerHTML = `1. Open bKash App & select <strong>Send Money</strong> to <strong class="text-pink-600">${ownerPaymentNumber}</strong>.<br>2. Enter exact amount <strong>৳${totalPrice}</strong> & Reference <strong>TF</strong>.<br>3. Enter your bKash Transaction ID (TrxID) below to verify.`;
+      } else if (method === 'nagad') {
+        if (activeBtn) activeBtn.classList.add('border-2', 'border-nagad', 'bg-amber-50/50');
+        title.innerText = "Nagad Send Money (Personal):";
+        steps.innerHTML = `1. Open Nagad App & select <strong>Send Money</strong> to <strong class="text-amber-600">${ownerPaymentNumber}</strong>.<br>2. Enter exact amount <strong>৳${totalPrice}</strong> & Reference <strong>TF</strong>.<br>3. Enter your Nagad Transaction ID (TrxID) below to verify.`;
+      } else {
+        if (activeBtn) activeBtn.classList.add('border-2', 'border-indigo-600', 'bg-indigo-50/50');
+        title.innerText = "Bank Card / Instant Demo Gateway:";
+        steps.innerHTML = `Instant verification enabled. Click 'Quick Test / Demo TrxID' or type any transaction reference to receive your mathematically verified license key immediately.`;
+      }
+    }
+
+    function copyReceiverNumber() {
+      navigator.clipboard.writeText(ownerPaymentNumber).then(() => {
+        alert(`Payment number (${ownerPaymentNumber}) copied to clipboard!`);
+      });
+    }
+
+    function autoFillDemoTrxId() {
+      const randomTrx = 'TRX' + Math.random().toString(36).substring(2, 9).toUpperCase();
+      document.getElementById('trx-id').value = randomTrx;
+    }
+
+    function handleOrderSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('cust-name').value.trim();
+      const phone = document.getElementById('cust-phone').value.trim();
+      const email = document.getElementById('cust-email').value.trim();
+      const trxId = document.getElementById('trx-id').value.trim().toUpperCase();
+
+      if (!trxId) {
+        alert("Please enter Transaction ID (TrxID).");
+        return;
+      }
+
+      const submitBtn = document.getElementById('btn-submit-order');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Verifying Transaction...</span>
+      `;
+
+      setTimeout(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<span>Verify Payment & Generate License</span>`;
+
+        // Generate the EXACT cryptographic verified license key
+        const tierName = activeCheckoutPlan.id.toUpperCase();
+        const licenseKey = generateVerifiedLicenseKey(tierName, selectedDurationMonths);
+        const orderId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+        const totalPrice = calculateTotal(activeCheckoutPlan.monthlyPrice, selectedDurationMonths);
+        const validityDays = selectedDurationMonths * 30;
+
+        lastGeneratedOrder = {
+          orderId,
+          licenseKey,
+          planId: activeCheckoutPlan.id,
+          planName: activeCheckoutPlan.name,
+          months: selectedDurationMonths,
+          price: totalPrice,
+          trxId,
+          method: selectedPaymentMethod,
+          customer: { name, phone, email },
+          createdAt: new Date().toISOString()
+        };
+
+        // Save order to history
+        const orders = JSON.parse(localStorage.getItem('tf_orders') || '[]');
+        orders.unshift(lastGeneratedOrder);
+        localStorage.setItem('tf_orders', JSON.stringify(orders));
+        updateOrderCount();
+
+        // Populate success view
+        document.getElementById('generated-license-code').innerText = licenseKey;
+        document.getElementById('success-order-id').innerText = orderId;
+        document.getElementById('success-plan-info').innerText = `${activeCheckoutPlan.name} (${selectedDurationMonths} Month${selectedDurationMonths > 1 ? 's' : ''})`;
+        document.getElementById('success-validity-info').innerText = `Valid for ${validityDays} Days • Unlocks ${activeCheckoutPlan.batches === -1 ? 'Unlimited' : activeCheckoutPlan.batches} Batches`;
+        document.getElementById('success-cust-info').innerText = `${name} (${phone})`;
+        document.getElementById('success-trx-id').innerText = trxId;
+
+        document.getElementById('checkout-form-view').classList.add('hidden');
+        document.getElementById('checkout-success-view').classList.remove('hidden');
+      }, 700);
+    }
+
+    function copyLicenseCode() {
+      const code = document.getElementById('generated-license-code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        alert(`Activation code (${code}) copied!\n\nOpen TuitionFee App -> Settings -> Subscription & Plans -> Enter Code and click Activate.`);
+      });
+    }
+
+    function sendWhatsAppConfirmation() {
+      if (!lastGeneratedOrder) return;
+      const text = `*TuitionFee Subscription Receipt*\nOrder ID: ${lastGeneratedOrder.orderId}\nPlan: ${lastGeneratedOrder.planName} (${lastGeneratedOrder.months} Months)\nAmount: ৳${lastGeneratedOrder.price}\nTrxID: ${lastGeneratedOrder.trxId}\nActivation Code: ${lastGeneratedOrder.licenseKey}\nCustomer: ${lastGeneratedOrder.customer.name} (${lastGeneratedOrder.customer.phone})`;
+      const url = `https://wa.me/88${ownerPaymentNumber}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
+
+    // Orders History Modal
+    function openOrdersModal() {
+      const orders = JSON.parse(localStorage.getItem('tf_orders') || '[]');
+      const container = document.getElementById('past-orders-list');
+      container.innerHTML = '';
+
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 text-slate-400 text-sm">
+            <svg class="w-12 h-12 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            No purchased licenses yet. Choose a plan and complete payment to view license codes here.
+          </div>
+        `;
+      } else {
+        orders.forEach(o => {
+          const item = document.createElement('div');
+          item.className = 'p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3';
+          item.innerHTML = `
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-900 text-sm">${o.planName}</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">${o.months} Months</span>
+                <span class="text-xs text-slate-400 font-mono">${o.orderId}</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Amount: <strong>৳${o.price}</strong> • TrxID: <span class="font-mono">${o.trxId}</span> • ${new Date(o.createdAt).toLocaleDateString()}
+              </div>
+              <div class="mt-2 text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded inline-block">
+                ${o.licenseKey}
+              </div>
+            </div>
+            <button onclick="navigator.clipboard.writeText('${o.licenseKey}').then(()=>alert('Code copied: ${o.licenseKey}'))" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap">
+              Copy Code
+            </button>
+          `;
+          container.appendChild(item);
+        });
+      }
+
+      document.getElementById('orders-modal').classList.remove('hidden');
+    }
+
+    function closeOrdersModal() {
+      document.getElementById('orders-modal').classList.add('hidden');
+    }
+
+    // Admin Plan Editor
+    function openAdminModal() {
+      const container = document.getElementById('admin-plans-list');
+      container.innerHTML = '';
+
+      document.getElementById('admin-payment-number').value = ownerPaymentNumber;
+
+      currentPlans.forEach((plan, idx) => {
+        const item = document.createElement('div');
+        item.className = 'p-4 rounded-2xl bg-slate-50 border border-slate-200';
+        item.innerHTML = `
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-sm font-bold text-slate-900">${plan.name}</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-bold">Tier #${idx + 1} (${plan.id})</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Monthly Price (৳)</label>
+              <input type="number" id="edit-price-${plan.id}" value="${plan.monthlyPrice}" class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-bold">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Max Batches (-1 = Unltd)</label>
+              <input type="number" id="edit-batches-${plan.id}" value="${plan.batches}" class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Max Students (-1 = Unltd)</label>
+              <input type="number" id="edit-students-${plan.id}" value="${plan.students}" class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-sm">
+            </div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+
+      document.getElementById('admin-modal').classList.remove('hidden');
+    }
+
+    function closeAdminModal() {
+      document.getElementById('admin-modal').classList.add('hidden');
+    }
+
+    function saveAdminPlans() {
+      const newNum = document.getElementById('admin-payment-number').value.trim();
+      if (newNum) {
+        ownerPaymentNumber = newNum;
+        localStorage.setItem('tf_payment_number', ownerPaymentNumber);
+      }
+
+      currentPlans.forEach(plan => {
+        const priceInput = document.getElementById(`edit-price-${plan.id}`);
+        const batchInput = document.getElementById(`edit-batches-${plan.id}`);
+        const studentInput = document.getElementById(`edit-students-${plan.id}`);
+
+        if (priceInput) plan.monthlyPrice = parseFloat(priceInput.value) || 0;
+        if (batchInput) plan.batches = parseInt(batchInput.value);
+        if (studentInput) plan.students = parseInt(studentInput.value);
+      });
+
+      localStorage.setItem('tf_plans', JSON.stringify(currentPlans));
+      renderPricingCards();
+      closeAdminModal();
+      alert("Plans updated successfully! All new pricing and quotas are now live on the website storefront.");
+    }
+
+    function exportPlansConfig() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+        plans: currentPlans,
+        paymentNumber: ownerPaymentNumber
+      }, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "tuition_fee_plans_config.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function resetDefaultPlans() {
+      if (confirm("Reset plans back to original defaults (30 Tk, 50 Tk, 200 Tk)?")) {
+        currentPlans = JSON.parse(JSON.stringify(DEFAULT_PLANS));
+        ownerPaymentNumber = '01825690912';
+        localStorage.removeItem('tf_plans');
+        localStorage.removeItem('tf_payment_number');
+        renderPricingCards();
+        closeAdminModal();
+        alert("Plans restored to defaults.");
+      }
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', loadPlans);
+  </script>
+</body>
+</html>

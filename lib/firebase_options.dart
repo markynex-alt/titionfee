@@ -17,14 +17,10 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-<<<<<<< HEAD
       throw UnsupportedError(
         'DefaultFirebaseOptions have not been configured for web - '
         'you can reconfigure this by running the FlutterFire CLI again.',
       );
-=======
-      return web;
->>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -53,10 +49,9 @@ class DefaultFirebaseOptions {
     }
   }
 
-<<<<<<< HEAD
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDINq1wLl4suonKOChgov843tywF5TfzUg',
-    appId: '1:1222743060:android:5a64b99d694efc0bb70301',
+    appId: '1:1222743060:android:0eb09240965d6024b70301',
     messagingSenderId: '1222743060',
     projectId: 'tuitionfee-67718',
     storageBucket: 'tuitionfee-67718.firebasestorage.app',
@@ -73,32 +68,3 @@ class DefaultFirebaseOptions {
   );
 
 }
-=======
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAJzdfuueNLi5TkeQ9s7odsigRg8J_8lFU',
-    appId: '1:985365100623:web:5c52c11a22598033dad23a',
-    messagingSenderId: '985365100623',
-    projectId: 'habluquiz',
-    authDomain: 'habluquiz.firebaseapp.com',
-    storageBucket: 'habluquiz.firebasestorage.app',
-    measurementId: 'G-VHTZN8KX04',
-  );
-
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAiSURGoauIGHT90s4157-0xryE2lgppw8',
-    appId: '1:985365100623:android:dad9bb0cbaf81c66dad23a',
-    messagingSenderId: '985365100623',
-    projectId: 'habluquiz',
-    storageBucket: 'habluquiz.firebasestorage.app',
-  );
-
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA_A-eH4RaSl5imHdYItOXBoviSaTvf06c',
-    appId: '1:985365100623:ios:ece9cf249426c92adad23a',
-    messagingSenderId: '985365100623',
-    projectId: 'habluquiz',
-    storageBucket: 'habluquiz.firebasestorage.app',
-    iosBundleId: 'com.example.habluQuiz',
-  );
-}
->>>>>>> 4d468ac3f4498ed06e9535c71266a6cff83aa7e6

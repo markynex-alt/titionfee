@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/app_provider.dart';
+import '../services/license_service.dart';
+import '../dialoges/edit_subscription_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,34 +19,231 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  bool isLoading = false;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: "1222743060-292lpfs5ktq5tgfhupfveu62lt7rv5kh.apps.googleusercontent.com",
+  );
+  bool _isAuthLoading = false;
 
-  // Helper to extract a formatted name from email if displayName is null
+  static const String _debugSha1 = "DC:97:C5:3E:28:B9:EC:E9:E4:A5:DE:F7:89:B1:95:E1:76:20:31:05";
+  static const String _releaseSha1 = "5F:51:FC:45:74:75:BC:67:7B:86:BC:68:52:09:2A:63:AA:46:90:17";
+
+  void _showPlayStoreSha1HelpDialog() {
+    final isBn = context.read<AppProvider>().appLanguage == 'bn';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.security, color: Colors.orange, size: 24),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                isBn ? "গুগল সাইন-ইন সমাধান (SHA-1)" : "Google Sign-In Fix (SHA-1 Keys)",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isBn
+                    ? "ApiException 10 ত্রুটির কারণ: ফায়ারবেস কনসোলে এই অ্যাপের (com.tuitionfee.app) সাইনিং কি-এর SHA-1 ফিঙ্গারপ্রিন্ট যোগ করা নেই।"
+                    : "ApiException: 10 occurs because the SHA-1 signing fingerprint is not added to Firebase Console under com.tuitionfee.app.",
+                style: const TextStyle(fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 12),
+
+              // Debug SHA-1 Box
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.indigo.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Debug SHA-1 (Emulator/Test):",
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.indigo),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            Clipboard.setData(const ClipboardData(text: _debugSha1));
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(
+                                content: Text("Debug SHA-1 copied to clipboard!"),
+                                behavior: SnackBarBehavior.floating,
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            child: Row(
+                              children: [
+                                Icon(Icons.copy, size: 12, color: Colors.indigo),
+                                SizedBox(width: 4),
+                                Text("Copy", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const SelectableText(
+                      _debugSha1,
+                      style: TextStyle(fontSize: 10, fontFamily: 'monospace', fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Release SHA-1 Box
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.teal.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.teal.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Release / Upload SHA-1 (APK/AAB):",
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.teal),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            Clipboard.setData(const ClipboardData(text: _releaseSha1));
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(
+                                content: Text("Release SHA-1 copied to clipboard!"),
+                                behavior: SnackBarBehavior.floating,
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            child: Row(
+                              children: [
+                                Icon(Icons.copy, size: 12, color: Colors.teal),
+                                SizedBox(width: 4),
+                                Text("Copy", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const SelectableText(
+                      _releaseSha1,
+                      style: TextStyle(fontSize: 10, fontFamily: 'monospace', fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isBn ? "কীভাবে ফায়ারবেসে যুক্ত করবেন:" : "How to Add to Firebase Console:",
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blue),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isBn
+                          ? "১. Firebase Console -> Project Settings -> General\n২. Your apps থেকে 'com.tuitionfee.app' নির্বাচন করুন\n৩. 'Add fingerprint'-এ ক্লিক করে উপরের SHA-1 পেস্ট করে Save করুন!\n৪. Play Store অ্যাপ হলে Play Console -> App integrity -> App signing থেকে SHA-1 যোগ করুন।"
+                          : "1. Go to Firebase Console -> Project Settings -> General\n2. Select 'com.tuitionfee.app' in Your Apps\n3. Click 'Add fingerprint', paste the SHA-1 above & save!\n4. For Play Store builds, also add Play Console App Signing SHA-1.",
+                      style: const TextStyle(fontSize: 11, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                isBn
+                    ? "✓ নোট: আপনার অফলাইন ডেটাবেস সম্পূর্ণ সচল রয়েছে।"
+                    : "✓ Note: Local offline database is 100% active and working normally.",
+                style: TextStyle(fontSize: 11, color: Colors.green.shade800, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(isBn ? "বুঝেছি" : "Got It"),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _getUserName(User? user) {
-    if (user == null) return "Not Logged In";
-    if (user.displayName != null && user.displayName!.isNotEmpty) {
-      return user.displayName!;
+    if (user == null) return "Guest (Offline Mode)";
+    if (user.displayName != null && user.displayName!.trim().isNotEmpty) {
+      return user.displayName!.trim();
     }
     if (user.email != null && user.email!.contains('@')) {
       final namePart = user.email!.split('@').first;
       return namePart
           .split(RegExp(r'[._-]'))
-          .map((str) => str.isNotEmpty
-          ? str[0].toUpperCase() + str.substring(1)
-          : '')
+          .where((s) => s.isNotEmpty)
+          .map((str) => str[0].toUpperCase() + str.substring(1))
           .join(' ');
     }
     return "User";
   }
 
-  // ---------------- GOOGLE LOGIN ----------------
+  // ---------------- GOOGLE SIGN IN ----------------
   Future<void> _loginWithGoogle() async {
     try {
-      setState(() => isLoading = true);
+      setState(() => _isAuthLoading = true);
 
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return; // User canceled login
+      if (googleUser == null) {
+        setState(() => _isAuthLoading = false);
+        return;
+      }
 
       final GoogleSignInAuthentication googleAuth =
       await googleUser.authentication;
@@ -55,90 +257,356 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (!mounted) return;
 
-      // Sync user data with Firebase upon successful login
       final provider = context.read<AppProvider>();
-      await provider.loadBatchesFromFirebase();
-      await provider.loadStudentsFromFirebase();
-      await provider.loadPaymentsFromFirebase();
+      // Seamlessly restore/merge cloud records with local Hive
+      await provider.restoreFromFirebase(merge: true);
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Login successful & data synced"),
+        SnackBar(
+          content: Text(provider.tr('success')),
           backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Login failed: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final errStr = e.toString();
+      if (errStr.contains('10') || errStr.contains('sign_in_failed') || errStr.contains('ApiException')) {
+        _showPlayStoreSha1HelpDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Sign-in error: $e"),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
-        setState(() => isLoading = false);
+        setState(() => _isAuthLoading = false);
       }
     }
   }
 
   // ---------------- LOGOUT ----------------
   Future<void> _logout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Confirm Logout"),
+        content: const Text(
+          "Are you sure you want to sign out? Your local data will remain safe on your device.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Sign Out"),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true) return;
+
     try {
-      setState(() => isLoading = true);
+      setState(() => _isAuthLoading = true);
       await _auth.signOut();
       await _googleSignIn.signOut();
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Logged out successfully"),
+          content: Text("Signed out. Operating in Local Offline Mode."),
           backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Logout error: $e")),
+        SnackBar(
+          content: Text("Logout error: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) {
-        setState(() => isLoading = false);
+        setState(() => _isAuthLoading = false);
       }
+    }
+  }
+
+  // ---------------- BACKUP TO FIREBASE ----------------
+  Future<void> _handleBackup(AppProvider p) async {
+    if (_auth.currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please sign in with Google first to backup your data."),
+          backgroundColor: Colors.amber,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final success = await p.backupToFirebase();
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? "All local data backed up to Firebase Cloud!"
+              : "Backup failed: ${p.syncStatusMessage}",
+        ),
+        backgroundColor: success ? Colors.green : Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // ---------------- RESTORE FROM FIREBASE ----------------
+  Future<void> _handleRestore(AppProvider p) async {
+    if (_auth.currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please sign in with Google first to restore data."),
+          backgroundColor: Colors.amber,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Restore from Cloud"),
+        content: const Text(
+          "Do you want to download your cloud data? Local data will be safely merged so no entries are lost.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Merge & Restore"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final success = await p.restoreFromFirebase(merge: true);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? "Data successfully restored and merged from Firebase!"
+              : "Restore failed: ${p.syncStatusMessage}",
+        ),
+        backgroundColor: success ? Colors.green : Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // ---------------- RESET LOCAL DATA ----------------
+  Future<void> _handleResetLocalData(AppProvider p) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Clear Local Database"),
+        content: const Text(
+          "Are you sure you want to clear local data from this device? If you backed up to Firebase, you can restore it later.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Clear All"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    await p.clearLocalData();
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Local data cleared."),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // ---------------- CURRENCY DIALOG ----------------
+  void _showCurrencyPicker(AppProvider p) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Select Currency Symbol"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text("৳ (BDT Taka)"),
+              leading: const Icon(Icons.currency_exchange),
+              trailing: p.currencySymbol == '৳'
+                  ? const Icon(Icons.check, color: Colors.green)
+                  : null,
+              onTap: () {
+                p.setCurrencySymbol('৳');
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: const Text("TK (Text Taka)"),
+              leading: const Icon(Icons.currency_exchange),
+              trailing: p.currencySymbol == 'TK'
+                  ? const Icon(Icons.check, color: Colors.green)
+                  : null,
+              onTap: () {
+                p.setCurrencySymbol('TK');
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: const Text("\$ (Dollar)"),
+              leading: const Icon(Icons.attach_money),
+              trailing: p.currencySymbol == '\$'
+                  ? const Icon(Icons.check, color: Colors.green)
+                  : null,
+              onTap: () {
+                p.setCurrencySymbol('\$');
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: const Text("₹ (Rupee)"),
+              leading: const Icon(Icons.currency_rupee),
+              trailing: p.currencySymbol == '₹'
+                  ? const Icon(Icons.check, color: Colors.green)
+                  : null,
+              onTap: () {
+                p.setCurrencySymbol('₹');
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatSyncTime(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return "Never synced";
+    try {
+      final dt = DateTime.parse(isoString);
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+
+      if (diff.inSeconds < 60) return "Just now";
+      if (diff.inMinutes < 60) return "${diff.inMinutes}m ago";
+      if (diff.inHours < 24 && dt.day == now.day) {
+        return "Today at ${DateFormat('hh:mm a').format(dt)}";
+      }
+      return DateFormat('dd MMM yyyy, hh:mm a').format(dt);
+    } catch (_) {
+      return "Unknown";
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final User? user = _auth.currentUser;
+    final p = context.watch<AppProvider>();
+    final user = _auth.currentUser;
+    final isLoggedIn = user != null;
+    final userName = _getUserName(user);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF7F8FC),
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Text(
-          "Settings",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              p.tr('settings_title'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+            Text(
+              p.tr('settings_subtitle'),
+              style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.normal),
+            ),
+          ],
         ),
-        centerTitle: false,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // User Account Card
-              _buildAccountCard(user),
-              const SizedBox(height: 20),
+              // 1. Account & Profile Header Card
+              _buildAccountCard(p, user, isLoggedIn, userName),
+              const SizedBox(height: 16),
 
-              // App Information Section
-              _buildAppInfoSection(),
+              // 2. Subscription & Plans
+              _buildSubscriptionCard(p),
+              const SizedBox(height: 16),
+
+              // 3. Storage & Cloud Sync Section
+              _buildStorageSyncCard(p, isLoggedIn),
+              const SizedBox(height: 16),
+
+              // 4. Local Database Statistics
+              _buildDatabaseOverview(p),
+              const SizedBox(height: 16),
+
+              // 5. App Preferences (Currency, Language Ban/En, Clear Data)
+              _buildPreferencesCard(p),
+              const SizedBox(height: 16),
+
+              // 6. App Info & Version
+              _buildAppInfoCard(p),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -146,19 +614,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ---------- ACCOUNT CARD ----------
-  Widget _buildAccountCard(User? user) {
-    final isLoggedIn = user != null;
-    final userName = _getUserName(user);
+  // ---------------- ACCOUNT CARD ----------------
+  void _showEditOrgDialog(AppProvider p) {
+    final orgCtrl = TextEditingController(text: p.organizationName);
+    final phoneCtrl = TextEditingController(text: p.contactPhone);
+    final isBn = p.appLanguage == 'bn';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          isBn ? "প্রতিষ্ঠানের তথ্য" : "Organization Details",
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: orgCtrl,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: isBn ? "কোচিং / প্রতিষ্ঠানের নাম" : "Organization Name",
+                prefixIcon: const Icon(Icons.business_rounded),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: isBn ? "যোগাযোগের ফোন নম্বর" : "Contact Phone",
+                prefixIcon: const Icon(Icons.phone_outlined),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(p.tr('cancel')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await p.saveOrganizationProfile(
+                orgName: orgCtrl.text.trim(),
+                phone: phoneCtrl.text.trim(),
+              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(isBn ? "তথ্য সংরক্ষিত হয়েছে" : "Profile updated successfully!"),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            child: Text(p.tr('save')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountCard(AppProvider p, User? user, bool isLoggedIn, String userName) {
+    final hasOrg = p.organizationName.isNotEmpty || p.contactPhone.isNotEmpty;
+    final isBn = p.appLanguage == 'bn';
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -167,80 +706,172 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       child: Column(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isLoggedIn
-                    ? Colors.deepPurple.shade300
-                    : Colors.grey.shade300,
-                width: 2,
-              ),
-            ),
-            child: CircleAvatar(
-              radius: 42,
-              backgroundColor: Colors.deepPurple.shade50,
-              child: user?.photoURL != null
-                  ? ClipOval(
-                child: Image.network(
-                  user!.photoURL!,
-                  width: 84,
-                  height: 84,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Text(
-                    userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                    style: const TextStyle(
-                      fontSize: 32,
+          Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isLoggedIn ? Colors.deepPurple : Colors.grey.shade300,
+                    width: 2.5,
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 32,
+                  backgroundColor: Colors.deepPurple.shade50,
+                  child: user?.photoURL != null
+                      ? ClipOval(
+                    child: Image.network(
+                      user!.photoURL!,
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Text(
+                        userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                    ),
+                  )
+                      : Text(
+                    isLoggedIn && userName.isNotEmpty
+                        ? userName[0].toUpperCase()
+                        : 'U',
+                    style: TextStyle(
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.deepPurple,
+                      color: isLoggedIn ? Colors.deepPurple : Colors.grey.shade400,
                     ),
                   ),
                 ),
-              )
-                  : Text(
-                isLoggedIn && userName.isNotEmpty
-                    ? userName[0].toUpperCase()
-                    : 'U',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: isLoggedIn
-                      ? Colors.deepPurple
-                      : Colors.grey.shade400,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      user?.email ?? "Offline Local Mode",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isLoggedIn
+                            ? Colors.green.shade50
+                            : Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isLoggedIn ? Icons.cloud_done : Icons.cloud_off,
+                            size: 13,
+                            color: isLoggedIn ? Colors.green.shade700 : Colors.orange.shade700,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isLoggedIn ? "Firebase Connected" : "Local Storage Active",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isLoggedIn ? Colors.green.shade700 : Colors.orange.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (hasOrg) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.shade50.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.deepPurple.shade100),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.business_rounded, size: 18, color: Colors.deepPurple),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (p.organizationName.isNotEmpty)
+                          Text(
+                            p.organizationName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.deepPurple),
+                          ),
+                        if (p.contactPhone.isNotEmpty)
+                          Text(
+                            p.contactPhone,
+                            style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                          ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.deepPurple),
+                    tooltip: isBn ? "তথ্য পরিবর্তন" : "Edit Profile",
+                    onPressed: () => _showEditOrgDialog(p),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: () => _showEditOrgDialog(p),
+                icon: const Icon(Icons.add_business_outlined, size: 16, color: Colors.deepPurple),
+                label: Text(
+                  isBn ? "+ প্রতিষ্ঠানের তথ্য যুক্ত করুন" : "+ Add Organization Info",
+                  style: const TextStyle(fontSize: 12, color: Colors.deepPurple, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 14),
-
-          // --- DISPLAY USER NAME ---
-          Text(
-            userName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // --- DISPLAY EMAIL OR HELPER TEXT ---
-          Text(
-            user?.email ?? "Sign in with Google to backup and sync your data.",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.0),
-              child: CircularProgressIndicator(),
+          ],
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          if (_isAuthLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(),
+              ),
             )
           else if (!isLoggedIn)
             ElevatedButton(
@@ -248,28 +879,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black87,
                 elevation: 0,
-                minimumSize: const Size(double.infinity, 50),
+                minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(color: Colors.grey.shade300),
                 ),
               ),
               onPressed: _loginWithGoogle,
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.g_mobiledata_rounded,
-                    color: Colors.redAccent,
-                    size: 28,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    "Sign in with Google",
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.redAccent,
                     ),
+                    child: const Icon(
+                      Icons.g_mobiledata_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    "Sign in with Google to Sync",
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -277,17 +912,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           else
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: const BorderSide(color: Colors.redAccent),
-                minimumSize: const Size(double.infinity, 50),
+                foregroundColor: Colors.redAccent,
+                side: BorderSide(color: Colors.redAccent.shade100),
+                minimumSize: const Size(double.infinity, 44),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              icon: const Icon(Icons.logout_rounded, size: 20),
+              icon: const Icon(Icons.logout_rounded, size: 18),
               label: const Text(
-                "Logout Account",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                "Sign Out",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
               onPressed: _logout,
             ),
@@ -296,15 +931,1150 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ---------- APP INFO SECTION ----------
-  Widget _buildAppInfoSection() {
+  // ---------------- STORAGE & CLOUD SYNC CARD ----------------
+  Widget _buildStorageSyncCard(AppProvider p, bool isLoggedIn) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.sync_rounded, color: Colors.deepPurple, size: 20),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  "Data Storage & Firebase Sync",
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+
+          // Auto Sync Toggle
+          SwitchListTile(
+            title: const Text(
+              "Auto-Sync Changes",
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text(
+              "Automatically update Firebase when changes are made",
+              style: TextStyle(fontSize: 12),
+            ),
+            value: p.isAutoSyncEnabled,
+            activeThumbColor: Colors.deepPurple,
+            onChanged: (val) => p.setAutoSyncEnabled(val),
+          ),
+          const Divider(height: 1),
+
+          // Last Sync Timestamp
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Last Cloud Sync:",
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    _formatSyncTime(p.lastSyncTime),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Manual Backup & Restore Buttons
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: p.isSyncing
+                ? Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    p.syncStatusMessage ?? "Syncing...",
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            )
+                : Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+                    label: const Text(
+                      "Backup to Cloud",
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () => _handleBackup(p),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.deepPurple,
+                      side: const BorderSide(color: Colors.deepPurple),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    icon: const Icon(Icons.cloud_download_outlined, size: 18),
+                    label: const Text(
+                      "Restore Data",
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () => _handleRestore(p),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+        ],
+      ),
+    );
+  }
+
+  // ---------------- DATABASE OVERVIEW CARD ----------------
+  Widget _buildDatabaseOverview(AppProvider p) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.storage_rounded, color: Colors.indigo, size: 18),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                "Local Storage Statistics",
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMiniStat(
+                  "Batches",
+                  "${p.batches.length}",
+                  Icons.group_outlined,
+                  Colors.orange,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildMiniStat(
+                  "Students",
+                  "${p.students.length}",
+                  Icons.school_outlined,
+                  Colors.deepPurple,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildMiniStat(
+                  "Payments",
+                  "${p.paymentBox.length}",
+                  Icons.receipt_long_outlined,
+                  Colors.teal,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniStat(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------- WEBSITE REDIRECTION ----------------
+  Future<void> _launchWebsite() async {
+    final uri = Uri.parse(LicenseService.websiteUrl);
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (_) {
+      await Clipboard.setData(const ClipboardData(text: LicenseService.websiteUrl));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Website link copied: https://tuitionfee.markynex.com/"),
+            backgroundColor: Colors.teal,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  // ---------------- TRXID ACTIVATION MODAL ----------------
+  void _showTrxVerificationModal(AppProvider p) {
+    final isBn = p.appLanguage == 'bn';
+    final trxCtrl = TextEditingController();
+    bool isVerifying = false;
+    String? errorMessage;
+    LicenseResult? successResult;
+
+    showDialog(
+      context: context,
+      barrierDismissible: !isVerifying,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            backgroundColor: Colors.white,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Modal Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.deepPurple.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.verified_user_rounded, color: Colors.deepPurple, size: 24),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isBn ? "প্যাকেজ সক্রিয় করুন" : "Activate Package",
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                                ),
+                                Text(
+                                  isBn ? "TrxID বা অ্যাক্টিভেশন কোড" : "With TrxID or License Key",
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.grey),
+                          onPressed: isVerifying ? null : () => Navigator.pop(dialogCtx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    if (successResult != null) ...[
+                      // Success View
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.green.shade300),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.green,
+                              ),
+                              child: const Icon(Icons.check_rounded, color: Colors.white, size: 36),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              isBn ? "প্যাকেজ সফলভাবে সক্রিয় হয়েছে!" : "Package Activated Successfully!",
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: Colors.green.shade200),
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        isBn ? "প্যাকেজের নাম:" : "Package Name:",
+                                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                                      ),
+                                      Text(
+                                        successResult!.planName ?? p.currentPlan.name(p.appLanguage),
+                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                                      ),
+                                    ],
+                                  ),
+                                  const Divider(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        isBn ? "মেয়াদ উত্তীর্ণের তারিখ:" : "Validation Date:",
+                                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                                      ),
+                                      Text(
+                                        p.planExpiryDate != null
+                                            ? DateFormat('dd MMMM yyyy').format(p.planExpiryDate!)
+                                            : (isBn ? "সক্রিয়" : "Active"),
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
+                                      ),
+                                    ],
+                                  ),
+                                  const Divider(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        isBn ? "প্যাকেজের মেয়াদ:" : "Duration:",
+                                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                                      ),
+                                      Text(
+                                        "${successResult!.months} ${isBn ? 'মাস' : 'Months'}",
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.teal),
+                                      ),
+                                    ],
+                                  ),
+                                  const Divider(height: 16),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        isBn ? "আনলক কোটা:" : "Unlocked Capacity:",
+                                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                                      ),
+                                      Text(
+                                        "${p.currentPlan.isUnlimitedBatches ? (isBn ? 'সীমাহীন' : 'Unlimited') : p.currentPlan.batchLimit} Batches • ${p.currentPlan.isUnlimitedStudents ? (isBn ? 'সীমাহীন' : 'Unlimited') : p.currentPlan.studentLimit} Students",
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 46),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              onPressed: () => Navigator.pop(dialogCtx),
+                              child: Text(
+                                isBn ? "সম্পন্ন করুন" : "Done",
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      // Input View
+                      Text(
+                        isBn
+                            ? "https://tuitionfee.markynex.com/ থেকে প্যাকেজ ক্রয় করার পর প্রাপ্ত TrxID (Transaction ID) বা অ্যাক্টিভেশন কোডটি নিচে লিখুন:"
+                            : "After purchasing your plan on https://tuitionfee.markynex.com/, enter the Transaction ID (TrxID) or code below:",
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.4),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Direct website shortcut chip
+                      InkWell(
+                        onTap: () {
+                          Navigator.pop(dialogCtx);
+                          _launchWebsite();
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.indigo.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.indigo.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.language, color: Colors.indigo, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  isBn ? "প্যাকেজ কিনতে ওয়েবসাইট খুলুন: tuitionfee.markynex.com" : "Buy a plan on website: tuitionfee.markynex.com",
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.indigo),
+                                ),
+                              ),
+                              const Icon(Icons.arrow_forward_ios, color: Colors.indigo, size: 12),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // TrxID Input Box
+                      TextField(
+                        controller: trxCtrl,
+                        textCapitalization: TextCapitalization.characters,
+                        enabled: !isVerifying,
+                        style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, letterSpacing: 1),
+                        decoration: InputDecoration(
+                          labelText: isBn ? "Transaction ID (TrxID)" : "Transaction ID (TrxID)",
+                          hintText: "e.g. 9J47K8LM or TF-STANDARD-3M-8558",
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                          prefixIcon: const Icon(Icons.receipt_long_rounded),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.paste_rounded, size: 20),
+                            tooltip: "Paste",
+                            onPressed: isVerifying
+                                ? null
+                                : () async {
+                                    final data = await Clipboard.getData('text/plain');
+                                    if (data?.text != null) {
+                                      setModalState(() {
+                                        trxCtrl.text = data!.text!.trim();
+                                      });
+                                    }
+                                  },
+                          ),
+                        ),
+                      ),
+
+                      if (errorMessage != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.red.shade200),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.error_outline, size: 18, color: Colors.red.shade700),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  errorMessage!,
+                                  style: TextStyle(fontSize: 12, color: Colors.red.shade800, height: 1.3),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+
+                      // Submit button
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          minimumSize: const Size(double.infinity, 48),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        onPressed: isVerifying
+                            ? null
+                            : () async {
+                                final code = trxCtrl.text.trim();
+                                if (code.isEmpty) {
+                                  setModalState(() {
+                                    errorMessage = isBn
+                                        ? "অনুগ্রহ করে TrxID বা অ্যাক্টিভেশন কোডটি লিখুন।"
+                                        : "Please enter your Transaction ID (TrxID).";
+                                  });
+                                  return;
+                                }
+
+                                setModalState(() {
+                                  isVerifying = true;
+                                  errorMessage = null;
+                                });
+
+                                final res = await p.verifyAndActivateLicense(code);
+
+                                setModalState(() {
+                                  isVerifying = false;
+                                  if (res.isValid) {
+                                    successResult = res;
+                                  } else {
+                                    errorMessage = res.message;
+                                  }
+                                });
+                              },
+                        child: isVerifying
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text("Verifying Transaction..."),
+                                ],
+                              )
+                            : Text(
+                                isBn ? "যাচাই ও সক্রিয় করুন" : "Verify & Activate Plan",
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ---------------- SUBSCRIPTION & PLANS CARD ----------------
+  Widget _buildSubscriptionCard(AppProvider p) {
+    final isBn = p.appLanguage == 'bn';
+    final plan = p.currentPlan;
+    final isFree = plan.isFree;
+    final isExpired = p.isPlanExpired;
+    final daysRemaining = p.planDaysRemaining;
+    final expiryDate = p.planExpiryDate;
+
+    // Calculate usage ratios
+    final batchRatio = plan.isUnlimitedBatches
+        ? 0.0
+        : (plan.batchLimit > 0 ? (p.batches.length / plan.batchLimit).clamp(0.0, 1.0) : 0.0);
+    final studentRatio = plan.isUnlimitedStudents
+        ? 0.0
+        : (plan.studentLimit > 0 ? (p.students.length / plan.studentLimit).clamp(0.0, 1.0) : 0.0);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header Row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.star_rounded, color: Colors.amber, size: 22),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      p.tr('subscription_section_title'),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                // Status pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isFree
+                        ? Colors.blue.shade50
+                        : (isExpired ? Colors.red.shade50 : Colors.green.shade50),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isFree
+                          ? Colors.blue.shade200
+                          : (isExpired ? Colors.red.shade200 : Colors.green.shade200),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isFree
+                              ? Colors.blue
+                              : (isExpired ? Colors.red : Colors.green),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        isFree
+                            ? (isBn ? "ফ্রি টিয়ার" : "Free Tier")
+                            : (isExpired
+                                ? (isBn ? "মেয়াদোত্তীর্ণ" : "Expired")
+                                : (isBn ? "সক্রিয়" : "Active")),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isFree
+                              ? Colors.blue.shade800
+                              : (isExpired ? Colors.red.shade800 : Colors.green.shade800),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ---------------- PROMINENT ACTIVE PLAN & VALIDATION CARD ----------------
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isFree
+                    ? [const Color(0xFF1E293B), const Color(0xFF334155)]
+                    : (plan.id == 'unlimited'
+                        ? [const Color(0xFF4C1D95), const Color(0xFF6D28D9)]
+                        : (plan.id == 'standard'
+                            ? [const Color(0xFF9A3412), const Color(0xFFEA580C)]
+                            : [const Color(0xFF0F766E), const Color(0xFF0D9488)])),
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Active Plan Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isBn ? "সক্রিয় প্যাকেজের নাম (Active Plan):" : "Active Package Name:",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          plan.name(p.appLanguage),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        plan.isUnlimitedBatches
+                            ? (isBn ? "সীমাহীন অ্যাক্সেস" : "Unlimited Access")
+                            : "${plan.batchLimit}B • ${plan.studentLimit}S",
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(color: Colors.white24, height: 1),
+                const SizedBox(height: 12),
+
+                // Validation Time Section
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.timer_outlined, color: Colors.greenAccent, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isBn ? "ভ্যালিডেশনের মেয়াদ (Validation Time):" : "Validation Time:",
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isFree
+                                ? (isBn ? "আজীবন মেয়াদ (Permanent Free)" : "Permanent Validity (Always Free)")
+                                : (expiryDate != null
+                                    ? "${isBn ? 'মেয়াদ উত্তীর্ণ: ' : 'Valid until: '}${DateFormat('dd MMMM yyyy').format(expiryDate)}"
+                                    : (isBn ? "সক্রিয়" : "Active")),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!isFree && daysRemaining != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isExpired
+                              ? Colors.red.withValues(alpha: 0.3)
+                              : (daysRemaining <= 7
+                                  ? Colors.orange.withValues(alpha: 0.3)
+                                  : Colors.green.withValues(alpha: 0.3)),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isExpired
+                                ? Colors.redAccent
+                                : (daysRemaining <= 7 ? Colors.orangeAccent : Colors.greenAccent),
+                          ),
+                        ),
+                        child: Text(
+                          isExpired
+                              ? (isBn ? "মেয়াদ শেষ" : "Expired")
+                              : (isBn ? "$daysRemaining দিন বাকি" : "$daysRemaining Days Left"),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isExpired
+                                ? Colors.redAccent
+                                : (daysRemaining <= 7 ? Colors.orangeAccent : Colors.greenAccent),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Quotas with visual progress bars
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            child: Column(
+              children: [
+                // Batch Quota Bar
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      isBn ? "ব্যাচ কোটা ব্যবহার:" : "Batch Quota Used:",
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      "${p.batches.length} / ${plan.isUnlimitedBatches ? (isBn ? 'সীমাহীন' : 'Unlimited') : plan.batchLimit}",
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                if (!plan.isUnlimitedBatches) ...[
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: batchRatio,
+                      backgroundColor: Colors.grey.shade200,
+                      color: batchRatio >= 1.0 ? Colors.red : (batchRatio >= 0.8 ? Colors.orange : Colors.deepPurple),
+                      minHeight: 6,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+
+                // Student Quota Bar
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      isBn ? "শিক্ষার্থী কোটা ব্যবহার:" : "Student Quota Used:",
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      "${p.students.length} / ${plan.isUnlimitedStudents ? (isBn ? 'সীমাহীন' : 'Unlimited') : plan.studentLimit}",
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                if (!plan.isUnlimitedStudents) ...[
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: studentRatio,
+                      backgroundColor: Colors.grey.shade200,
+                      color: studentRatio >= 1.0 ? Colors.red : (studentRatio >= 0.8 ? Colors.orange : Colors.teal),
+                      minHeight: 6,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // ---------------- ACTION BUTTONS ----------------
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              children: [
+                // 1. Primary Action: Redirect to Website to Purchase Plan
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF16A34A), // Rich Green
+                    foregroundColor: Colors.white,
+                    elevation: 1,
+                    minimumSize: const Size(double.infinity, 50),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: _launchWebsite,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.open_in_new_rounded, size: 20),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isBn ? "ওয়েবসাইট থেকে প্ল্যান কিনুন" : "Purchase Plan on Website",
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                            const Text(
+                              "https://tuitionfee.markynex.com/",
+                              style: TextStyle(fontSize: 10, color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  // ---------------- LANGUAGE PICKER DIALOG ----------------
+  void _showLanguagePicker(AppProvider p) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(p.tr('app_language')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text("English"),
+              leading: const Icon(Icons.language),
+              trailing: p.appLanguage == 'en'
+                  ? const Icon(Icons.check, color: Colors.green)
+                  : null,
+              onTap: () {
+                p.setAppLanguage('en');
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: const Text("বাংলা (Bangla)"),
+              leading: const Icon(Icons.translate),
+              trailing: p.appLanguage == 'bn'
+                  ? const Icon(Icons.check, color: Colors.green)
+                  : null,
+              onTap: () {
+                p.setAppLanguage('bn');
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------- PREFERENCES CARD ----------------
+  Widget _buildPreferencesCard(AppProvider p) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.tune_rounded, color: Colors.blue, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  p.tr('preferences_title'),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+
+          // Language Selector Option (Ban / En)
+          ListTile(
+            leading: const Icon(Icons.translate_rounded, color: Colors.indigo),
+            title: Text(p.tr('app_language'), style: const TextStyle(fontSize: 14)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    p.appLanguage == 'bn' ? "বাংলা (Ban)" : "English",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.indigo),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right, color: Colors.grey),
+              ],
+            ),
+            onTap: () => _showLanguagePicker(p),
+          ),
+          const Divider(height: 1),
+
+          // Currency Symbol
+          ListTile(
+            leading: const Icon(Icons.currency_exchange, color: Colors.green),
+            title: Text(p.tr('currency_symbol'), style: const TextStyle(fontSize: 14)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  p.currencySymbol,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right, color: Colors.grey),
+              ],
+            ),
+            onTap: () => _showCurrencyPicker(p),
+          ),
+          const Divider(height: 1),
+
+          // Clear Local Data
+          ListTile(
+            leading: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
+            title: Text(
+              p.tr('clear_local_data'),
+              style: const TextStyle(fontSize: 14, color: Colors.redAccent),
+            ),
+            subtitle: Text(
+              p.tr('clear_local_data_desc'),
+              style: const TextStyle(fontSize: 11),
+            ),
+            onTap: () => _handleResetLocalData(p),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------- APP INFO CARD ----------------
+  Widget _buildAppInfoCard(AppProvider p) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -313,44 +2083,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       child: Column(
         children: [
-          ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.deepPurple.shade50,
-                borderRadius: BorderRadius.circular(8),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.teal.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.info_outline, color: Colors.teal, size: 18),
               ),
-              child: const Icon(Icons.cloud_sync_outlined,
-                  color: Colors.deepPurple, size: 20),
-            ),
-            title: const Text(
-              "Cloud Backup",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            subtitle: const Text(
-              "Syncs local Hive database with Firestore",
-              style: TextStyle(fontSize: 12),
-            ),
+              const SizedBox(width: 10),
+              Text(
+                p.tr('about_app'),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-          Divider(height: 1, color: Colors.grey.shade200),
-          ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-            ),
-            title: const Text(
-              "App Version",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            trailing: const Text(
-              "v1.0.0",
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, color: Colors.grey),
-            ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(p.tr('app_name_label'), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(p.tr('app_name_value'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(p.tr('app_version_label'), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              const Text("v1.1.1+6", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(p.tr('offline_support_label'), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(p.tr('offline_support_val'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.green)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(p.tr('cloud_db_label'), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(p.tr('cloud_db_val'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.deepPurple)),
+            ],
           ),
         ],
       ),
